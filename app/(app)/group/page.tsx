@@ -113,11 +113,11 @@ export default function GroupCornerPage() {
         <div className="max-w-3xl mx-auto px-4 py-6 flex flex-col gap-6">
 
           <div>
-            <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--color-text-primary)" }}>
+            <h1 className="neon-heading text-2xl font-black mb-1 uppercase tracking-widest">
               Group Corner
             </h1>
             <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-              Your group's living dashboard.
+              Your group&apos;s living dashboard.
             </p>
           </div>
 

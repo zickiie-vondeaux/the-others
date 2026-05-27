@@ -66,8 +66,8 @@ function StatCard({
 }) {
   return (
     <div
-      className="flex flex-col gap-2 p-4 rounded-xl"
-      style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}
+      className="cyber-card flex flex-col gap-2 p-4 rounded-xl"
+      style={{ backgroundColor: "var(--color-surface)" }}
     >
       <div className="flex items-center gap-2">
         <div className="p-1.5 rounded-lg" style={{ backgroundColor: bg, color }}>

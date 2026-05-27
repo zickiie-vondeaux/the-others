@@ -198,6 +198,46 @@ img[loading="lazy"].loaded {
   padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
 }
 
+/* ── ECG trace animations ───────────────────────────────────── */
+
+@keyframes ecg-scroll-1 {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-4000px); }
+}
+@keyframes ecg-scroll-2 {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-4000px); }
+}
+@keyframes ecg-scroll-3 {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-4000px); }
+}
+
+.ecg-trace-1 { animation: ecg-scroll-1 22s linear infinite; }
+.ecg-trace-2 { animation: ecg-scroll-2 15s linear infinite; }
+.ecg-trace-3 { animation: ecg-scroll-3 11s linear infinite; }
+
+/* ── Neon heading ───────────────────────────────────────────── */
+
+.neon-heading {
+  color: #00ffea;
+  text-shadow: 0 0 18px rgba(0, 255, 234, 0.45);
+  letter-spacing: 0.02em;
+}
+
+/* ── Cyber card ─────────────────────────────────────────────── */
+
+.cyber-card {
+  border: 1px solid rgba(0, 255, 234, 0.14) !important;
+  box-shadow: 0 0 18px rgba(0, 255, 234, 0.04), inset 0 0 20px rgba(0, 255, 234, 0.015);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cyber-card:hover {
+  border-color: rgba(0, 255, 234, 0.28) !important;
+  box-shadow: 0 0 28px rgba(0, 255, 234, 0.09), inset 0 0 20px rgba(0, 255, 234, 0.03);
+}
+
 /* ── Cyberpunk app background ───────────────────────────────── */
 
 .app-bg {
