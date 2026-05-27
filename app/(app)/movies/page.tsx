@@ -15,6 +15,7 @@ import {
 import { Plus, LayoutGrid, List, Filter, Film, Vote, Clock } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { formatDistanceToNow } from "date-fns";
+import { GridSkeleton } from "@/components/ui/Skeleton";
 
 type Tab = "all" | GroupMovieStatus;
 type ViewMode = "grid" | "list";
@@ -259,9 +260,7 @@ export default function MoviesPage() {
 
           {/* Content */}
           {loading ? (
-            <div className="py-20 text-center">
-              <div className="inline-block w-8 h-8 rounded-full border-2 animate-spin" style={{ borderColor: "var(--color-border)", borderTopColor: "var(--color-cyan)" }} />
-            </div>
+            <GridSkeleton count={8} />
           ) : filteredMovies.length === 0 ? (
             <EmptyState tab={tab} onAdd={() => setShowAddModal(true)} />
           ) : viewMode === "grid" ? (

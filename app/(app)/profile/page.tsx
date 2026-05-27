@@ -1,13 +1,33 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { TopBar } from "@/components/layout/TopBar";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { PLATFORMS } from "@/lib/supabase/types";
 import { Pencil, Gamepad2, Film, Utensils, Music, MapPin, Calendar } from "lucide-react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
+import { ALL_ACHIEVEMENTS, ACHIEVEMENT_MAP } from "@/lib/achievements";
+import { AchievementGrid } from "@/components/achievements/AchievementBadge";
+import { ALL_QUIZZES, AUTO_CALC_META, type AutoCalcSlug } from "@/lib/personality";
+import type { PersonalityResult } from "@/lib/supabase/types";
 
 export default function ProfilePage() {
   const { profile, loading } = useCurrentUser();
+  const [earnedIds, setEarnedIds] = useState<string[]>([]);
+  const [personalityResults, setPersonalityResults] = useState<PersonalityResult[]>([]);
+
+  useEffect(() => {
+    if (!profile) return;
+    const supabase = createClient();
+    Promise.all([
+      supabase.from("user_achievements").select("achievement_id").eq("user_id", profile.id),
+      supabase.from("personality_results").select("*").eq("user_id", profile.id),
+    ]).then(([{ data: ach }, { data: pers }]) => {
+      setEarnedIds((ach ?? []).map((r: any) => r.achievement_id));
+      setPersonalityResults((pers ?? []) as PersonalityResult[]);
+    });
+  }, [profile?.id]);
 
   if (loading) return <LoadingState />;
   if (!profile) return null;
@@ -118,11 +138,41 @@ export default function ProfilePage() {
             </Section>
           )}
 
-          {/* Personality — placeholder */}
-          <Section title="Personality Tests" action={{ label: "Take tests", href: "/personality" }}>
-            <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-              No results yet. Head to the Personality Corner to take your first test.
-            </p>
+          {/* Personality results */}
+          <Section title="Personality" action={{ label: "Take tests", href: "/personality" }}>
+            {personalityResults.length === 0 ? (
+              <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+                No results yet. Head to the Personality Corner to take your first test.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {[...ALL_QUIZZES, ...Object.entries(AUTO_CALC_META).map(([slug, m]) => ({ slug, ...m }))].map(q => {
+                  const r = personalityResults.find(p => p.test_slug === q.slug);
+                  if (!r) return null;
+                  return (
+                    <div
+                      key={q.slug}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                      style={{ backgroundColor: "var(--color-surface-elevated)", border: "1px solid var(--color-border)" }}
+                    >
+                      <span className="text-base">{q.icon}</span>
+                      <div>
+                        <p className="text-xs font-bold" style={{ color: "var(--color-purple)" }}>{r.result_code}</p>
+                        <p className="text-[10px]" style={{ color: "var(--color-text-muted)" }}>{q.shortName}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Section>
+
+          {/* Achievements */}
+          <Section title={`Achievements · ${earnedIds.length}/${ALL_ACHIEVEMENTS.length}`}>
+            <AchievementGrid
+              earned={earnedIds.map(id => ACHIEVEMENT_MAP[id]).filter(Boolean)}
+              locked={ALL_ACHIEVEMENTS.filter(a => !earnedIds.includes(a.id))}
+            />
           </Section>
 
         </div>

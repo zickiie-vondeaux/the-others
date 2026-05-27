@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import type { Poll, PollOption, PollVote, Movie } from "@/lib/supabase/types";
 import { X, Vote, Film, Check, Trophy, Loader2, Plus, Clock } from "lucide-react";
+import { logActivity } from "@/lib/activity";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils/cn";
 
@@ -99,6 +100,7 @@ export function CreatePollModal({ myUserId, queueMovies, onClose, onCreated }: C
 
     const options = selectedMovieIds.map((movie_id, i) => ({ poll_id: poll.id, movie_id, position: i }));
     await supabase.from("poll_options").insert(options);
+    logActivity({ type: "poll_created", entityType: "poll", entityId: poll.id, entityTitle: title.trim() });
     setSaving(false);
     onCreated();
     onClose();
@@ -244,6 +246,8 @@ export function PollDetailModal({ poll, myUserId, onClose, onUpdated }: Props) {
       is_closed: true,
       winning_movie_id: winnerOpt?.movie_id ?? null,
     }).eq("id", poll.id);
+    const winnerTitle = winnerOpt?.movie?.title ?? "Unknown";
+    logActivity({ type: "poll_closed", entityType: "poll", entityId: poll.id, entityTitle: poll.title, metadata: { winner: winnerTitle } });
     setClosing(false);
     onUpdated();
   }

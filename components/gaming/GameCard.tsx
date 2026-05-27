@@ -1,6 +1,6 @@
 "use client";
 
-import { Gamepad2, Users, Star } from "lucide-react";
+import { Gamepad2, Users, Star, Trash2 } from "lucide-react";
 import { GROUP_STATUS_META, type Game, type PersonalGameStatus } from "@/lib/supabase/types";
 
 interface Props {
@@ -10,9 +10,10 @@ interface Props {
   wantCount: number;
   totalMembers: number;
   onClick: () => void;
+  onDelete?: () => void;
 }
 
-export function GameCard({ game, myStatus, playedCount, wantCount, totalMembers, onClick }: Props) {
+export function GameCard({ game, myStatus, playedCount, wantCount, totalMembers, onClick, onDelete }: Props) {
   const statusMeta = GROUP_STATUS_META[game.group_status];
 
   return (
@@ -36,7 +37,7 @@ export function GameCard({ game, myStatus, playedCount, wantCount, totalMembers,
       {/* Cover art */}
       <div className="relative aspect-[3/4] overflow-hidden" style={{ backgroundColor: "var(--color-surface-elevated)" }}>
         {game.cover_url
-          ? <img src={game.cover_url} alt={game.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+          ? <img src={game.cover_url} alt={game.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
           : <div className="w-full h-full flex items-center justify-center">
               <Gamepad2 size={36} style={{ color: "var(--color-text-muted)" }} />
             </div>
@@ -63,6 +64,11 @@ export function GameCard({ game, myStatus, playedCount, wantCount, totalMembers,
             <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "rgba(6,182,212,0.2)", color: "var(--color-cyan)" }}>🎮</span>
           </div>
         )}
+        {myStatus === "playing_multiplayer" && (
+          <div className="absolute top-2 right-2">
+            <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "rgba(6,182,212,0.2)", color: "var(--color-cyan)" }}>👾</span>
+          </div>
+        )}
         {myStatus === "completed" && (
           <div className="absolute top-2 right-2">
             <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "rgba(16,185,129,0.2)", color: "var(--color-green)" }}>✅</span>
@@ -77,6 +83,18 @@ export function GameCard({ game, myStatus, playedCount, wantCount, totalMembers,
               Co-op
             </span>
           </div>
+        )}
+
+        {/* Delete button */}
+        {onDelete && (
+          <button
+            onClick={e => { e.stopPropagation(); onDelete(); }}
+            className="absolute bottom-2 left-2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ backgroundColor: "rgba(0,0,0,0.6)", color: "#ef4444" }}
+            aria-label="Remove game"
+          >
+            <Trash2 size={12} />
+          </button>
         )}
       </div>
 

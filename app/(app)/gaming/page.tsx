@@ -12,6 +12,7 @@ import {
 } from "@/lib/supabase/types";
 import { Plus, LayoutGrid, List, Filter, Gamepad2, Star } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { GridSkeleton } from "@/components/ui/Skeleton";
 
 type Tab = "all" | GroupGameStatus | "wishlist";
 type ViewMode = "grid" | "list";
@@ -99,6 +100,12 @@ export default function GamingPage() {
 
   function wantCountForGame(gameId: string): number {
     return allStatuses.filter(r => r.game_id === gameId && r.status === "want_to_play").length;
+  }
+
+  async function deleteGame(gameId: string) {
+    const supabase = createClient();
+    await supabase.from("games").delete().eq("id", gameId);
+    fetchData();
   }
 
   // All genres and platforms from library
@@ -274,10 +281,7 @@ export default function GamingPage() {
 
           {/* Content */}
           {loading ? (
-            <div className="py-20 text-center">
-              <div className="inline-block w-8 h-8 rounded-full border-2 border-t-purple-500 animate-spin"
-                style={{ borderColor: "var(--color-border)", borderTopColor: "var(--color-purple)" }} />
-            </div>
+            <GridSkeleton count={8} />
           ) : filteredGames.length === 0 ? (
             <EmptyState tab={tab} onAdd={() => setShowAddModal(true)} />
           ) : viewMode === "grid" ? (
@@ -291,6 +295,7 @@ export default function GamingPage() {
                   wantCount={wantCountForGame(game.id)}
                   totalMembers={profiles.length}
                   onClick={() => setSelectedGame(game)}
+                  onDelete={() => deleteGame(game.id)}
                 />
               ))}
             </div>
@@ -328,7 +333,7 @@ export default function GamingPage() {
           myStatus={myStatusForGame(selectedGame.id)}
           memberStatuses={memberStatusesForGame(selectedGame.id)}
           totalMembers={profiles.length}
-          isAdmin={myRole === "super_admin" || myRole === "moderator"}
+          isAdmin={true}
           onClose={() => setSelectedGame(null)}
           onUpdated={() => { fetchData(); }}
           onDelete={() => { setSelectedGame(null); fetchData(); }}

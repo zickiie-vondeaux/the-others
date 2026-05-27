@@ -7,6 +7,8 @@ import { GROUP_STATUS_META, type GroupGameStatus } from "@/lib/supabase/types";
 import type { NormalizedGame } from "@/lib/rawg";
 import { Search, X, Gamepad2, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { logActivity } from "@/lib/activity";
+import { useAchievements } from "@/components/achievements/AchievementProvider";
 
 interface Props {
   userId: string;
@@ -19,6 +21,7 @@ type Tab = "search" | "manual";
 const STATUS_OPTIONS: GroupGameStatus[] = ["queue", "playing", "completed", "dropped"];
 
 export function AddGameModal({ userId, onClose, onAdded }: Props) {
+  const { triggerCheck } = useAchievements();
   const [tab, setTab] = useState<Tab>("search");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<NormalizedGame[]>([]);
@@ -102,6 +105,8 @@ export function AddGameModal({ userId, onClose, onAdded }: Props) {
     const { error: err } = await supabase.from("games").insert(payload);
     setSaving(false);
     if (err) { setError(err.message); return; }
+    logActivity({ type: "game_added", entityType: "game", entityTitle: (payload as any).title as string });
+    triggerCheck();
     onAdded();
     onClose();
   }

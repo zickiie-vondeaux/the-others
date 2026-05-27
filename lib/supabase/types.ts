@@ -29,7 +29,7 @@ export type Platform = (typeof PLATFORMS)[number];
 // ── Gaming ─────────────────────────────────────────────────────
 
 export type GroupGameStatus = "queue" | "playing" | "completed" | "dropped";
-export type PersonalGameStatus = "playing_solo" | "completed" | "want_to_play" | "not_interested";
+export type PersonalGameStatus = "playing_solo" | "playing_multiplayer" | "completed" | "want_to_play" | "not_interested";
 
 export interface Game {
   id: string;
@@ -62,10 +62,11 @@ export const GROUP_STATUS_META: Record<GroupGameStatus, { label: string; color: 
 };
 
 export const PERSONAL_STATUS_META: Record<PersonalGameStatus, { label: string; icon: string }> = {
-  playing_solo:   { label: "Playing solo",   icon: "🎮" },
-  completed:      { label: "Completed",      icon: "✅" },
-  want_to_play:   { label: "Want to play",   icon: "⭐" },
-  not_interested: { label: "Not interested", icon: "👻" },
+  playing_solo:        { label: "Playing solo",        icon: "🎮" },
+  playing_multiplayer: { label: "Playing multiplayer", icon: "👾" },
+  completed:           { label: "Completed",           icon: "✅" },
+  want_to_play:        { label: "Want to play",        icon: "⭐" },
+  not_interested:      { label: "Not interested",      icon: "👻" },
 };
 
 // ── Movies ─────────────────────────────────────────────────────
@@ -136,3 +137,16 @@ export const PERSONAL_MOVIE_STATUS_META: Record<PersonalMovieStatus, { label: st
   want_to_watch:  { label: "Want to watch",  icon: "⭐" },
   not_interested: { label: "Not interested", icon: "👻" },
 };
+
+// ─── Personality ──────────────────────────────────────────────────────────────
+
+export interface PersonalityResult {
+  id: string;
+  user_id: string;
+  test_slug: string;
+  result_code: string;
+  result_label: string | null;
+  result_data: Record<string, number> | null;
+  is_shared: boolean;
+  taken_at: string;
+}

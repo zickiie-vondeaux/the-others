@@ -32,7 +32,7 @@ export function MovieCard({ movie, myStatus, watchedCount, wantCount, totalMembe
       {/* Poster */}
       <div className="relative aspect-[2/3] overflow-hidden" style={{ backgroundColor: "var(--color-surface-elevated)" }}>
         {movie.poster_url
-          ? <img src={movie.poster_url} alt={movie.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+          ? <img src={movie.poster_url} alt={movie.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
           : <div className="w-full h-full flex items-center justify-center"><Film size={36} style={{ color: "var(--color-text-muted)" }} /></div>}
 
         <div className="absolute top-2 left-2">

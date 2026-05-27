@@ -8,6 +8,8 @@ import {
   type Movie, type GroupMovieStatus, type PersonalMovieStatus, type Profile,
 } from "@/lib/supabase/types";
 import { X, Film, Users, Star, CalendarPlus, Trash2, Loader2, Clock } from "lucide-react";
+import { logActivity } from "@/lib/activity";
+import { useAchievements } from "@/components/achievements/AchievementProvider";
 
 interface MemberStatus {
   profile: Pick<Profile, "id" | "display_name" | "avatar_url" | "username">;
@@ -30,6 +32,7 @@ const GROUP_OPTIONS: GroupMovieStatus[] = ["queue", "watching", "watched", "drop
 const PERSONAL_OPTIONS: PersonalMovieStatus[] = ["watched", "watching", "want_to_watch", "not_interested"];
 
 export function MovieDetailModal({ movie, myUserId, myStatus, memberStatuses, totalMembers, isAdmin, onClose, onUpdated, onDelete }: Props) {
+  const { triggerCheck } = useAchievements();
   const [groupStatus, setGroupStatus] = useState<GroupMovieStatus>(movie.group_status);
   const [personalStatus, setPersonalStatus] = useState<PersonalMovieStatus | null>(myStatus);
   const [saving, setSaving] = useState(false);
@@ -63,6 +66,10 @@ export function MovieDetailModal({ movie, myUserId, myStatus, memberStatuses, to
         user_id: myUserId, movie_id: movie.id, status: s,
         watched_at: s === "watched" ? new Date().toISOString().split("T")[0] : null,
       }, { onConflict: "user_id,movie_id" });
+      if (s === "watched") {
+        logActivity({ type: "movie_watched", entityType: "movie", entityId: movie.id, entityTitle: movie.title });
+        triggerCheck();
+      }
       setPersonalStatus(s);
     }
     setSaving(false);
@@ -106,7 +113,7 @@ export function MovieDetailModal({ movie, myUserId, myStatus, memberStatuses, to
             {/* Hero */}
             <div className="flex gap-5 p-6 pb-4">
               {movie.poster_url
-                ? <img src={movie.poster_url} alt={movie.title} className="w-24 rounded-xl flex-shrink-0 shadow-lg object-cover" style={{ height: "144px" }} />
+                ? <img src={movie.poster_url} alt={movie.title} loading="lazy" className="w-24 rounded-xl flex-shrink-0 shadow-lg object-cover" style={{ height: "144px" }} />
                 : <div className="w-24 rounded-xl flex-shrink-0 flex items-center justify-center shadow-lg" style={{ backgroundColor: "var(--color-surface)", height: "144px" }}><Film size={28} style={{ color: "var(--color-text-muted)" }} /></div>}
               <div className="flex-1 min-w-0 pt-1">
                 <h2 className="text-xl font-bold leading-tight" style={{ color: "var(--color-text-primary)" }}>{movie.title}</h2>

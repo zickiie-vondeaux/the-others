@@ -28,7 +28,7 @@ interface Props {
 }
 
 const GROUP_STATUS_OPTIONS: GroupGameStatus[] = ["queue", "playing", "completed", "dropped"];
-const PERSONAL_STATUS_OPTIONS: PersonalGameStatus[] = ["playing_solo", "completed", "want_to_play", "not_interested"];
+const PERSONAL_STATUS_OPTIONS: PersonalGameStatus[] = ["playing_solo", "playing_multiplayer", "completed", "want_to_play", "not_interested"];
 
 export function GameDetailModal({
   game, myUserId, myStatus, memberStatuses, totalMembers, isAdmin,
@@ -36,6 +36,7 @@ export function GameDetailModal({
 }: Props) {
   const [groupStatus, setGroupStatus] = useState<GroupGameStatus>(game.group_status);
   const [personalStatus, setPersonalStatus] = useState<PersonalGameStatus | null>(myStatus);
+  const [isMultiplayer, setIsMultiplayer] = useState(game.is_multiplayer);
   const [saving, setSaving] = useState(false);
   const [scheduling, setScheduling] = useState(false);
   const [scheduleDate, setScheduleDate] = useState(() => {
@@ -48,7 +49,7 @@ export function GameDetailModal({
   const [deleting, setDeleting] = useState(false);
 
   const wantCount = memberStatuses.filter(m => m.status === "want_to_play").length;
-  const playedCount = memberStatuses.filter(m => m.status === "completed" || m.status === "playing_solo").length;
+  const playedCount = memberStatuses.filter(m => m.status === "completed" || m.status === "playing_solo" || m.status === "playing_multiplayer").length;
 
   async function updateGroupStatus(s: GroupGameStatus) {
     if (s === groupStatus) return;
@@ -98,6 +99,14 @@ export function GameDetailModal({
     window.location.href = "/calendar";
   }
 
+  async function toggleMultiplayer() {
+    const next = !isMultiplayer;
+    setIsMultiplayer(next);
+    const supabase = createClient();
+    await supabase.from("games").update({ is_multiplayer: next }).eq("id", game.id);
+    onUpdated();
+  }
+
   async function deleteGame() {
     setDeleting(true);
     const supabase = createClient();
@@ -108,7 +117,8 @@ export function GameDetailModal({
   }
 
   const membersWanting = memberStatuses.filter(m => m.status === "want_to_play");
-  const membersPlaying = memberStatuses.filter(m => m.status === "playing_solo");
+  const membersPlayingSolo = memberStatuses.filter(m => m.status === "playing_solo");
+  const membersPlayingMulti = memberStatuses.filter(m => m.status === "playing_multiplayer");
   const membersCompleted = memberStatuses.filter(m => m.status === "completed");
 
   return (
@@ -139,7 +149,7 @@ export function GameDetailModal({
             {/* Hero */}
             <div className="flex gap-5 p-6 pb-4">
               {game.cover_url
-                ? <img src={game.cover_url} alt={game.title}
+                ? <img src={game.cover_url} alt={game.title} loading="lazy"
                     className="w-24 h-32 object-cover rounded-xl flex-shrink-0 shadow-lg" />
                 : <div className="w-24 h-32 rounded-xl flex-shrink-0 flex items-center justify-center shadow-lg"
                     style={{ backgroundColor: "var(--color-surface)" }}>
@@ -157,7 +167,7 @@ export function GameDetailModal({
                   </p>
                 )}
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {game.is_multiplayer && (
+                  {isMultiplayer && (
                     <span className="text-xs px-2 py-0.5 rounded-full font-medium"
                       style={{ backgroundColor: "rgba(6,182,212,0.15)", color: "var(--color-cyan)" }}>
                       Multiplayer
@@ -214,21 +224,23 @@ export function GameDetailModal({
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-text-muted)" }}>My Status</p>
                 <div className="flex flex-wrap gap-2">
-                  {PERSONAL_STATUS_OPTIONS.filter(s => s !== "not_interested").map(s => {
-                    const meta = PERSONAL_STATUS_META[s];
-                    const active = personalStatus === s;
-                    return (
-                      <button key={s} onClick={() => updatePersonalStatus(active ? null : s)} disabled={saving}
-                        className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border flex items-center gap-1.5 disabled:opacity-60")}
-                        style={{
-                          backgroundColor: active ? "rgba(124,58,237,0.15)" : "transparent",
-                          borderColor: active ? "var(--color-purple)" : "var(--color-border)",
-                          color: active ? "var(--color-purple-light)" : "var(--color-text-muted)",
-                        }}>
-                        <span>{meta.icon}</span> {meta.label}
-                      </button>
-                    );
-                  })}
+                  {PERSONAL_STATUS_OPTIONS
+                    .filter(s => s !== "not_interested" && (s !== "playing_multiplayer" || isMultiplayer))
+                    .map(s => {
+                      const meta = PERSONAL_STATUS_META[s];
+                      const active = personalStatus === s;
+                      return (
+                        <button key={s} onClick={() => updatePersonalStatus(active ? null : s)} disabled={saving}
+                          className={cn("px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border flex items-center gap-1.5 disabled:opacity-60")}
+                          style={{
+                            backgroundColor: active ? "rgba(124,58,237,0.15)" : "transparent",
+                            borderColor: active ? "var(--color-purple)" : "var(--color-border)",
+                            color: active ? "var(--color-purple-light)" : "var(--color-text-muted)",
+                          }}>
+                          <span>{meta.icon}</span> {meta.label}
+                        </button>
+                      );
+                    })}
                   <button onClick={() => updatePersonalStatus(personalStatus === "not_interested" ? null : "not_interested")}
                     disabled={saving}
                     className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border flex items-center gap-1.5 disabled:opacity-60"
@@ -243,15 +255,18 @@ export function GameDetailModal({
               </div>
 
               {/* Member breakdown */}
-              {(membersPlaying.length > 0 || membersCompleted.length > 0 || membersWanting.length > 0) && (
+              {(membersPlayingSolo.length > 0 || membersPlayingMulti.length > 0 || membersCompleted.length > 0 || membersWanting.length > 0) && (
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-text-muted)" }}>The Others</p>
                   <div className="space-y-2">
                     {membersCompleted.length > 0 && (
                       <MemberRow label="Completed" icon="✅" members={membersCompleted} />
                     )}
-                    {membersPlaying.length > 0 && (
-                      <MemberRow label="Playing solo" icon="🎮" members={membersPlaying} />
+                    {membersPlayingMulti.length > 0 && (
+                      <MemberRow label="Playing multiplayer" icon="👾" members={membersPlayingMulti} color="var(--color-cyan)" />
+                    )}
+                    {membersPlayingSolo.length > 0 && (
+                      <MemberRow label="Playing solo" icon="🎮" members={membersPlayingSolo} />
                     )}
                     {membersWanting.length > 0 && (
                       <MemberRow label="Want to play" icon="⭐" members={membersWanting} color="var(--color-gold)" />
@@ -314,14 +329,22 @@ export function GameDetailModal({
                 </AnimatePresence>
               </div>
 
-              {/* Admin delete */}
+              {/* Admin controls */}
               {isAdmin && (
-                <button onClick={deleteGame} disabled={deleting}
-                  className="flex items-center gap-2 text-xs transition-colors disabled:opacity-50"
-                  style={{ color: "var(--color-text-muted)" }}>
-                  {deleting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                  Remove from library
-                </button>
+                <div className="flex items-center gap-4">
+                  <button onClick={toggleMultiplayer}
+                    className="flex items-center gap-2 text-xs transition-colors"
+                    style={{ color: isMultiplayer ? "var(--color-cyan)" : "var(--color-text-muted)" }}>
+                    <span>👾</span>
+                    {isMultiplayer ? "Multiplayer (on)" : "Mark as multiplayer"}
+                  </button>
+                  <button onClick={deleteGame} disabled={deleting}
+                    className="flex items-center gap-2 text-xs transition-colors disabled:opacity-50"
+                    style={{ color: "var(--color-text-muted)" }}>
+                    {deleting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                    Remove from library
+                  </button>
+                </div>
               )}
             </div>
           </div>

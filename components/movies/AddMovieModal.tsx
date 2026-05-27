@@ -7,6 +7,8 @@ import { GROUP_MOVIE_STATUS_META, type GroupMovieStatus } from "@/lib/supabase/t
 import type { OMDbSearchResult, NormalizedMovie } from "@/lib/omdb";
 import { Search, X, Film, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { logActivity } from "@/lib/activity";
+import { useAchievements } from "@/components/achievements/AchievementProvider";
 
 interface Props {
   userId: string;
@@ -18,6 +20,7 @@ type Tab = "search" | "manual";
 const STATUS_OPTIONS: GroupMovieStatus[] = ["queue", "watching", "watched", "dropped"];
 
 export function AddMovieModal({ userId, onClose, onAdded }: Props) {
+  const { triggerCheck } = useAchievements();
   const [tab, setTab] = useState<Tab>("search");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<OMDbSearchResult[]>([]);
@@ -83,6 +86,8 @@ export function AddMovieModal({ userId, onClose, onAdded }: Props) {
     const { error: err } = await supabase.from("movies").insert(payload);
     setSaving(false);
     if (err) { setError(err.message); return; }
+    logActivity({ type: "movie_added", entityType: "movie", entityTitle: (payload as any).title as string });
+    triggerCheck();
     onAdded(); onClose();
   }
 

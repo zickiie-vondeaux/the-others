@@ -18,7 +18,7 @@ export function MobileNav() {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 border-t z-50 flex"
+      className="lg:hidden fixed bottom-0 left-0 right-0 border-t z-50 flex pb-safe"
       style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
     >
       {navItems.map(({ href, label, icon: Icon }) => {
@@ -27,13 +27,14 @@ export function MobileNav() {
           <Link
             key={href}
             href={href}
-            className={cn(
-              "flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-medium transition-colors",
-              active ? "" : ""
-            )}
+            aria-label={label}
+            aria-current={active ? "page" : undefined}
+            className="flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-medium transition-all active:scale-90"
             style={{ color: active ? "var(--color-cyan)" : "var(--color-text-muted)" }}
           >
-            <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+            <span className={active ? "nav-active-glow" : ""}>
+              <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+            </span>
             <span>{label}</span>
           </Link>
         );
