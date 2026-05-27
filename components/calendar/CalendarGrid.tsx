@@ -1,11 +1,13 @@
 "use client";
 
+import { motion, AnimatePresence } from "framer-motion";
 import { getCalendarCells, toDateKey, EVENT_META, type AnyEvent, isBirthdayEvent } from "@/lib/calendar/utils";
 import { cn } from "@/lib/utils/cn";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
 interface Props {
   month: Date;
+  direction: number;
   eventsByDate: Record<string, AnyEvent[]>;
   onPrev: () => void;
   onNext: () => void;
@@ -17,9 +19,16 @@ const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const TODAY = toDateKey(new Date());
 
-export function CalendarGrid({ month, eventsByDate, onPrev, onNext, onDateClick, onEventClick }: Props) {
+const slideVariants = {
+  enter: (dir: number) => ({ x: dir > 0 ? "6%" : "-6%", opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir: number) => ({ x: dir > 0 ? "-6%" : "6%", opacity: 0 }),
+};
+
+export function CalendarGrid({ month, direction, eventsByDate, onPrev, onNext, onDateClick, onEventClick }: Props) {
   const cells = getCalendarCells(month.getFullYear(), month.getMonth());
   const currentMonthNum = month.getMonth();
+  const monthKey = `${month.getFullYear()}-${month.getMonth()}`;
 
   return (
     <div className="rounded-2xl border overflow-hidden"
@@ -32,16 +41,30 @@ export function CalendarGrid({ month, eventsByDate, onPrev, onNext, onDateClick,
           style={{ color: "var(--color-text-secondary)" }}>
           <ChevronLeft size={18} />
         </button>
-        <h2 className="text-base font-bold" style={{ color: "var(--color-text-primary)" }}>
-          {MONTHS[month.getMonth()]} {month.getFullYear()}
-        </h2>
+        <div className="overflow-hidden h-6 flex items-center">
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.h2
+              key={monthKey}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.22, ease: "easeInOut" }}
+              className="text-base font-bold"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              {MONTHS[month.getMonth()]} {month.getFullYear()}
+            </motion.h2>
+          </AnimatePresence>
+        </div>
         <button onClick={onNext} className="p-2 rounded-lg hover:bg-white/5 transition-colors"
           style={{ color: "var(--color-text-secondary)" }}>
           <ChevronRight size={18} />
         </button>
       </div>
 
-      {/* Day headers */}
+      {/* Day headers — static, never animates */}
       <div className="grid grid-cols-7 border-b" style={{ borderColor: "var(--color-border)" }}>
         {DAYS.map(d => (
           <div key={d} className="py-2 text-center text-xs font-semibold uppercase tracking-wide"
@@ -51,8 +74,19 @@ export function CalendarGrid({ month, eventsByDate, onPrev, onNext, onDateClick,
         ))}
       </div>
 
-      {/* Grid cells */}
-      <div className="grid grid-cols-7">
+      {/* Grid cells — animates on month change */}
+      <div className="overflow-hidden">
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={monthKey}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="grid grid-cols-7"
+          >
         {cells.map((date, i) => {
           const key = toDateKey(date);
           const isToday = key === TODAY;
@@ -124,6 +158,8 @@ export function CalendarGrid({ month, eventsByDate, onPrev, onNext, onDateClick,
             </div>
           );
         })}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

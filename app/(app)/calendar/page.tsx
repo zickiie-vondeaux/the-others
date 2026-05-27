@@ -22,10 +22,12 @@ export default function CalendarPage() {
   });
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [birthdays, setBirthdays] = useState<ReturnType<typeof getBirthdayEvents>>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [fetching, setFetching] = useState(false);
   const [userId, setUserId] = useState("");
   const [userRole, setUserRole] = useState("member");
   const [view, setView] = useState<View>("month");
+  const [direction, setDirection] = useState(1);
 
   // Modals
   const [createDate, setCreateDate] = useState<Date | null>(null);
@@ -33,8 +35,17 @@ export default function CalendarPage() {
 
   const fetchEvents = useCallback(async () => {
     const supabase = createClient();
-    const start = new Date(month.getFullYear(), month.getMonth() - 1, 1).toISOString();
-    const end = new Date(month.getFullYear(), month.getMonth() + 2, 0).toISOString();
+    // Always fetch ±1 month around current view AND at least 3 months from today
+    // so the list view (90-day window) is always fully covered
+    const today = new Date();
+    const start = new Date(Math.min(
+      new Date(month.getFullYear(), month.getMonth() - 1, 1).getTime(),
+      today.getTime()
+    )).toISOString();
+    const end = new Date(Math.max(
+      new Date(month.getFullYear(), month.getMonth() + 2, 0).getTime(),
+      new Date(today.getFullYear(), today.getMonth() + 3, 0).getTime()
+    )).toISOString();
 
     const { data } = await supabase
       .from("events")
@@ -46,35 +57,35 @@ export default function CalendarPage() {
     setEvents((data as CalendarEvent[]) ?? []);
   }, [month]);
 
+  // One-time init: user identity + birthdays
   useEffect(() => {
     const supabase = createClient();
     async function init() {
-      setLoading(true);
-
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
         const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .single();
+          .from("profiles").select("role").eq("id", user.id).single();
         if (profile) setUserRole(profile.role);
       }
-
-      // Fetch all profiles for birthdays
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, display_name, birthday, avatar_url, favorite_color")
         .not("birthday", "is", null);
-
       setBirthdays(getBirthdayEvents(profiles ?? [], month.getFullYear()));
-
       await fetchEvents();
-      setLoading(false);
+      setInitialLoading(false);
     }
     init();
-  }, [month, fetchEvents]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // runs once on mount
+
+  // Background fetch when month changes (after first load)
+  useEffect(() => {
+    if (initialLoading) return;
+    setFetching(true);
+    fetchEvents().finally(() => setFetching(false));
+  }, [month]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Subscribe to realtime event changes
   useEffect(() => {
@@ -89,11 +100,13 @@ export default function CalendarPage() {
   const allEvents: AnyEvent[] = [...events, ...birthdays];
   const eventsByDate = groupEventsByDate(allEvents);
 
-  // Upcoming events for list view (next 60 days)
-  const now = new Date();
-  const in60 = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
+  // Upcoming events for list view — use start of today so midnight events (birthdays)
+  // and events earlier today aren't incorrectly excluded
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const in90 = new Date(todayStart.getTime() + 90 * 24 * 60 * 60 * 1000);
   const upcomingEvents = allEvents
-    .filter(e => new Date(e.start_at) >= now && new Date(e.start_at) <= in60)
+    .filter(e => new Date(e.start_at) >= todayStart && new Date(e.start_at) <= in90)
     .sort((a, b) => a.start_at.localeCompare(b.start_at));
 
   return (
@@ -136,7 +149,16 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          {loading ? (
+          {/* Subtle fetch indicator — thin bar, doesn't hide the calendar */}
+          <div className="h-0.5 rounded-full mb-3 overflow-hidden"
+            style={{ backgroundColor: "var(--color-border)" }}>
+            {fetching && (
+              <div className="h-full w-1/3 rounded-full animate-pulse"
+                style={{ backgroundColor: "var(--color-purple)" }} />
+            )}
+          </div>
+
+          {initialLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="w-6 h-6 rounded-full border-2 animate-spin"
                 style={{ borderColor: "var(--color-border)", borderTopColor: "var(--color-purple)" }} />
@@ -144,9 +166,10 @@ export default function CalendarPage() {
           ) : view === "month" ? (
             <CalendarGrid
               month={month}
+              direction={direction}
               eventsByDate={eventsByDate}
-              onPrev={() => setMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
-              onNext={() => setMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+              onPrev={() => { setDirection(-1); setMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1)); }}
+              onNext={() => { setDirection(1);  setMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1)); }}
               onDateClick={date => setCreateDate(date)}
               onEventClick={event => setSelectedEvent(event)}
             />
