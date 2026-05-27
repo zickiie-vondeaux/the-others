@@ -20,7 +20,9 @@ export function MobileNav() {
     <nav
       className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex pb-safe"
       style={{
-        backgroundColor: "#08081a",
+        backgroundColor: "rgba(6,6,20,0.72)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
         borderTop: "1px solid rgba(0, 255, 234, 0.2)",
         boxShadow: "0 -4px 20px rgba(0, 255, 234, 0.06)",
       }}

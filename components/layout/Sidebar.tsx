@@ -37,7 +37,9 @@ export function Sidebar() {
     <aside
       className="hidden lg:flex flex-col w-64 h-full shrink-0"
       style={{
-        backgroundColor: "#08081a",
+        backgroundColor: "rgba(6,6,20,0.72)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
         borderRight: "1px solid rgba(0, 255, 234, 0.2)",
         boxShadow: "2px 0 20px rgba(0, 255, 234, 0.06)",
       }}
