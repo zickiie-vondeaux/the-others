@@ -110,7 +110,7 @@ export default function GroupCornerPage() {
     <>
       <TopBar title="Group Corner" />
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-4 py-6 flex flex-col gap-6">
+        <div className="px-[8%] py-6 flex flex-col gap-6">
 
           <div>
             <h1 className="neon-heading text-2xl font-black mb-1 uppercase tracking-widest">
@@ -194,7 +194,7 @@ export default function GroupCornerPage() {
           <PersonalityOverview results={personalityResults} totalMembers={stats.totalMembers} />
 
           <section>
-            <h2 className="text-base font-semibold mb-3" style={{ color: "var(--color-text-secondary)" }}>
+            <h2 className="text-base font-semibold mb-3" style={{ color: "var(--color-cyan)", textShadow: "0 0 8px rgba(0,255,234,0.45)" }}>
               Activity
             </h2>
             <ActivityFeed initial={feed} allReactions={reactions} myUserId={myUserId} />

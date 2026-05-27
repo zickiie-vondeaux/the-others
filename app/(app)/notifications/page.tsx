@@ -58,7 +58,7 @@ export default function NotificationsPage() {
     <>
       <TopBar title="Notifications" />
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-4">
+        <div className="px-[8%] py-6 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>Notifications</h1>
             {unread > 0 && (

@@ -142,8 +142,8 @@ export default function MoviesPage() {
   return (
     <>
       <TopBar title="Movie Library" />
-      <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
-        <div className="max-w-6xl mx-auto space-y-5">
+      <div className="flex-1 py-6 px-[8%] overflow-y-auto">
+        <div className="space-y-5">
 
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -168,7 +168,7 @@ export default function MoviesPage() {
           {/* Active polls */}
           {activePolls.length > 0 && (
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-text-muted)" }}>Active Polls</p>
+              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-cyan)", textShadow: "0 0 8px rgba(0,255,234,0.45)" }}>Active Polls</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {activePolls.map(poll => {
                   const myVote = poll.votes.find(v => v.user_id === myUserId);
@@ -284,7 +284,7 @@ export default function MoviesPage() {
           {/* Past polls */}
           {closedPolls.length > 0 && (
             <div className="pt-4 border-t" style={{ borderColor: "var(--color-border)" }}>
-              <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--color-text-muted)" }}>Past Polls</p>
+              <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--color-cyan)", textShadow: "0 0 8px rgba(0,255,234,0.45)" }}>Past Polls</p>
               <div className="space-y-2">
                 {closedPolls.map(poll => {
                   const optionIds = poll.options.map(o => o.id);

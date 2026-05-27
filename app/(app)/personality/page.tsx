@@ -150,7 +150,7 @@ export default function PersonalityPage() {
       )}
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-4 py-6 flex flex-col gap-8">
+        <div className="px-[8%] py-6 flex flex-col gap-8">
 
           {/* Header */}
           <div>
@@ -164,7 +164,7 @@ export default function PersonalityPage() {
 
           {/* Quizzes */}
           <section>
-            <h2 className="text-base font-semibold mb-3" style={{ color: "var(--color-text-secondary)" }}>
+            <h2 className="text-base font-semibold mb-3" style={{ color: "var(--color-cyan)", textShadow: "0 0 8px rgba(0,255,234,0.45)" }}>
               Personality Quizzes
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -182,7 +182,7 @@ export default function PersonalityPage() {
           {/* Auto-Calc */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-semibold" style={{ color: "var(--color-text-secondary)" }}>
+              <h2 className="text-base font-semibold" style={{ color: "var(--color-cyan)", textShadow: "0 0 8px rgba(0,255,234,0.45)" }}>
                 Auto-Calculated
               </h2>
               <button
@@ -242,7 +242,7 @@ export default function PersonalityPage() {
             <button
               onClick={() => setShowGroup(v => !v)}
               className="flex items-center gap-2 text-base font-semibold mb-3 hover:opacity-70 transition-opacity"
-              style={{ color: "var(--color-text-secondary)" }}
+              style={{ color: "var(--color-cyan)", textShadow: "0 0 8px rgba(0,255,234,0.45)" }}
             >
               <Users size={16} />
               Group Results

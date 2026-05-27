@@ -75,8 +75,8 @@ export default function EditProfilePage() {
   return (
     <>
       <TopBar title="Edit Profile" />
-      <div className="flex-1 p-6">
-        <div className="max-w-xl mx-auto">
+      <div className="flex-1 py-6 px-[8%]">
+        <div className="max-w-2xl">
           <div className="flex items-center gap-3 mb-6">
             <Link href="/profile" className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
               style={{ color: "var(--color-text-muted)" }}>
@@ -189,7 +189,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   return (
     <div className="rounded-2xl border p-5 space-y-4"
       style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
-      <h2 className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>{title}</h2>
+      <h2 className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--color-cyan)", textShadow: "0 0 8px rgba(0,255,234,0.45)" }}>{title}</h2>
       {children}
     </div>
   );

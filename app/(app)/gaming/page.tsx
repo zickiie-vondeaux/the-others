@@ -138,8 +138,8 @@ export default function GamingPage() {
     <>
       <TopBar title="Gaming Library" />
 
-      <div className="flex-1 p-4 lg:p-6 overflow-y-auto">
-        <div className="max-w-6xl mx-auto space-y-5">
+      <div className="flex-1 py-6 px-[8%] overflow-y-auto">
+        <div className="space-y-5">
 
           {/* Page header */}
           <div className="flex items-center justify-between">

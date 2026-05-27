@@ -4,8 +4,8 @@ export default function AdminPage() {
   return (
     <>
       <TopBar title="Admin Panel" />
-      <div className="flex-1 p-6">
-        <div className="max-w-3xl mx-auto">
+      <div className="flex-1 py-6 px-[8%]">
+        <div>
           <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--color-amber)" }}>
             Admin Panel
           </h1>
