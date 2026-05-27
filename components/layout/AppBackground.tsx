@@ -32,7 +32,7 @@ export function AppBackground() {
         style={{
           position: "absolute",
           inset: 0,
-          backgroundImage: "url('/bg-cyberpunk.png')",
+          backgroundImage: "url('/mainbg.png')",
           backgroundSize: "cover",
           backgroundPosition: "center top",
           backgroundRepeat: "no-repeat",
@@ -45,7 +45,7 @@ export function AppBackground() {
           position: "absolute",
           inset: 0,
           background:
-            "linear-gradient(to bottom, rgba(6,6,16,0.76) 0%, rgba(6,6,16,0.65) 45%, rgba(6,6,16,0.80) 100%)",
+            "linear-gradient(to bottom, rgba(6,6,16,0.82) 0%, rgba(6,6,16,0.75) 45%, rgba(6,6,16,0.88) 100%)",
         }}
       />
 

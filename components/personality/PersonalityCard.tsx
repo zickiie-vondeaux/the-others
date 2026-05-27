@@ -33,7 +33,10 @@ export function PersonalityCard({ result, slug, onTake, compact }: Props) {
           minHeight: compact ? 80 : 120,
         }}
       >
-        <span className="text-2xl">{meta.icon}</span>
+        {slug === "zodiac"
+          ? <span className="text-2xl font-black" style={{ color: "var(--color-purple)", textShadow: "0 0 10px rgba(139,92,246,0.8), 0 0 20px rgba(139,92,246,0.4)" }}>?</span>
+          : <span className="text-2xl">{meta.icon}</span>
+        }
         <span className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>
           {compact ? meta.shortName : meta.name}
         </span>
@@ -62,7 +65,16 @@ export function PersonalityCard({ result, slug, onTake, compact }: Props) {
         (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--color-border)";
       }}
     >
-      <span className="text-xl">{meta.icon}</span>
+      {slug === "zodiac" ? (
+        <img
+          src={`/${result.result_code}.svg`}
+          alt={result.result_code}
+          className={compact ? "w-7 h-7" : "w-10 h-10"}
+          style={{ filter: "drop-shadow(0 0 6px rgba(139,92,246,0.55))" }}
+        />
+      ) : (
+        <span className="text-xl">{meta.icon}</span>
+      )}
       <div
         className="text-lg font-black tracking-tight"
         style={{ color: "var(--color-purple)" }}
@@ -109,13 +121,17 @@ export function MemberPersonalityChips({ displayName, avatarUrl, results, slugs 
           const r = results.find(x => x.test_slug === slug);
           const meta = getMeta(slug);
           if (!r) return (
-            <span key={slug} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "var(--color-surface-elevated)", color: "var(--color-text-muted)" }}>
-              {meta.icon} —
+            <span key={slug} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "var(--color-surface-elevated)", color: "var(--color-text-muted)" }}>
+              {slug === "zodiac"
+                ? <span className="font-black text-[11px]" style={{ color: "var(--color-purple)", textShadow: "0 0 6px rgba(139,92,246,0.8)" }}>?</span>
+                : meta.icon} —
             </span>
           );
           return (
-            <span key={slug} className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: "rgba(139,92,246,0.12)", color: "var(--color-purple)", border: "1px solid rgba(139,92,246,0.2)" }}>
-              {meta.icon} {r.result_code}
+            <span key={slug} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: "rgba(139,92,246,0.12)", color: "var(--color-purple)", border: "1px solid rgba(139,92,246,0.2)" }}>
+              {slug === "zodiac"
+                ? <img src={`/${r.result_code}.svg`} alt={r.result_code} className="w-3.5 h-3.5" style={{ filter: "drop-shadow(0 0 3px rgba(139,92,246,0.7))" }} />
+                : meta.icon} {r.result_code}
             </span>
           );
         })}

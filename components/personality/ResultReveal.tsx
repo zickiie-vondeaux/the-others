@@ -63,13 +63,22 @@ export function ResultReveal({ quiz, result, isSaved, onRetake, onClose }: Props
             transition={{ type: "spring", stiffness: 200, damping: 18 }}
             className="text-center flex flex-col items-center gap-3"
           >
-            <div
-              className="text-5xl font-black tracking-tight"
-              style={{ color: "var(--color-purple)" }}
-            >
-              {symbol ?? result.code}
-            </div>
-            {symbol && (
+            {quiz?.slug === "zodiac" ? (
+              <img
+                src={`/${result.code}.svg`}
+                alt={result.code}
+                className="w-24 h-24"
+                style={{ filter: "drop-shadow(0 0 16px rgba(139,92,246,0.7))" }}
+              />
+            ) : (
+              <div
+                className="text-5xl font-black tracking-tight"
+                style={{ color: "var(--color-purple)" }}
+              >
+                {symbol ?? result.code}
+              </div>
+            )}
+            {symbol && quiz?.slug !== "zodiac" && (
               <div className="text-base font-bold" style={{ color: "var(--color-text-muted)" }}>
                 {result.code}
               </div>

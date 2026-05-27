@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   Home,
   Calendar,
@@ -13,6 +14,8 @@ import {
   Settings,
   Shield,
   ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -32,25 +35,59 @@ const bottomItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(true);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("sidebar-open");
+    if (stored !== null) setOpen(stored === "true");
+  }, []);
+
+  const toggle = () => {
+    setOpen(prev => {
+      const next = !prev;
+      localStorage.setItem("sidebar-open", String(next));
+      return next;
+    });
+  };
 
   return (
+    <>
+      {/* Floating re-open button when sidebar is hidden */}
+      {!open && (
+        <button
+          onClick={toggle}
+          className="hidden lg:flex fixed top-5 left-4 z-50 items-center justify-center w-8 h-8 rounded-lg transition-all hover:scale-110"
+          style={{
+            backgroundColor: "rgba(6,6,20,0.85)",
+            border: "1px solid rgba(0,255,234,0.25)",
+            color: "rgba(0,255,234,0.7)",
+            boxShadow: "0 0 10px rgba(0,255,234,0.15)",
+          }}
+          aria-label="Open sidebar"
+        >
+          <PanelLeftOpen size={15} />
+        </button>
+      )}
+
     <aside
-      className="hidden lg:flex flex-col w-64 h-full shrink-0"
+      className="hidden lg:flex flex-col h-full shrink-0 overflow-hidden"
       style={{
+        width: open ? "256px" : "0px",
+        transition: "width 0.25s ease",
         backgroundColor: "rgba(6,6,20,0.72)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
-        borderRight: "1px solid rgba(0, 255, 234, 0.2)",
-        boxShadow: "2px 0 20px rgba(0, 255, 234, 0.06)",
+        borderRight: open ? "1px solid rgba(0, 255, 234, 0.2)" : "none",
+        boxShadow: open ? "2px 0 20px rgba(0, 255, 234, 0.06)" : "none",
       }}
     >
       {/* Logo */}
       <div
-        className="flex items-center gap-3 px-6 py-6"
+        className="flex items-center gap-3 px-4 py-6 shrink-0"
         style={{ borderBottom: "1px solid rgba(0, 255, 234, 0.12)" }}
       >
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black shrink-0"
           style={{
             background: "linear-gradient(135deg, #8b5cf6, #00ffea)",
             boxShadow: "0 0 10px rgba(0, 255, 234, 0.4)",
@@ -58,9 +95,9 @@ export function Sidebar() {
         >
           T
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           <p
-            className="font-black text-sm tracking-widest uppercase"
+            className="font-black text-sm tracking-widest uppercase truncate"
             style={{
               color: "#00ffea",
               textShadow: "0 0 8px rgba(0, 255, 234, 0.6)",
@@ -72,6 +109,14 @@ export function Sidebar() {
             private hub
           </p>
         </div>
+        <button
+          onClick={toggle}
+          className="shrink-0 flex items-center justify-center w-7 h-7 rounded-md transition-all hover:scale-110"
+          style={{ color: "rgba(0,255,234,0.45)" }}
+          aria-label="Collapse sidebar"
+        >
+          <PanelLeftClose size={15} />
+        </button>
       </div>
 
       {/* Main nav */}
@@ -181,5 +226,6 @@ export function Sidebar() {
         </Link>
       </nav>
     </aside>
+    </>
   );
 }

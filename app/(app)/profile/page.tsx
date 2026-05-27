@@ -38,8 +38,8 @@ export default function ProfilePage() {
   return (
     <>
       <TopBar title="My Profile" />
-      <div className="flex-1 p-6">
-        <div className="max-w-2xl mx-auto space-y-5">
+      <div className="flex-1 py-6 px-[8%]">
+        <div className="space-y-5">
 
           {/* Hero card */}
           <div className="rounded-2xl border p-6 relative"
@@ -50,53 +50,67 @@ export default function ProfilePage() {
               <Pencil size={12} /> Edit
             </Link>
 
-            <div className="flex items-start gap-4">
-              {/* Avatar */}
-              <div className="w-20 h-20 rounded-2xl flex-shrink-0 overflow-hidden flex items-center justify-center text-3xl font-black text-white"
-                style={{ background: profile.favorite_color
-                  ? `linear-gradient(135deg, ${profile.favorite_color}cc, var(--color-purple))`
-                  : "linear-gradient(135deg, var(--color-purple), var(--color-cyan))"
-                }}>
-                {profile.avatar_url
-                  ? <img src={profile.avatar_url} alt={profile.display_name} className="w-full h-full object-cover" />
-                  : profile.display_name[0]?.toUpperCase()
-                }
+            <div className="flex gap-6">
+              {/* Left 30%: Avatar + Identity */}
+              <div className="w-[30%] shrink-0 flex flex-col items-center text-center gap-3">
+                <div className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center text-3xl font-black text-white"
+                  style={{ background: profile.favorite_color
+                    ? `linear-gradient(135deg, ${profile.favorite_color}cc, var(--color-purple))`
+                    : "linear-gradient(135deg, var(--color-purple), var(--color-cyan))"
+                  }}>
+                  {profile.avatar_url
+                    ? <img src={profile.avatar_url} alt={profile.display_name} className="w-full h-full object-cover" />
+                    : profile.display_name[0]?.toUpperCase()
+                  }
+                </div>
+                <div>
+                  <h1 className="text-xl font-black leading-tight" style={{ color: "var(--color-text-primary)" }}>
+                    {profile.display_name}
+                  </h1>
+                  <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>@{profile.username}</p>
+                  {profile.ign && (
+                    <p className="text-xs mt-1 font-medium" style={{ color: "var(--color-cyan)" }}>
+                      IGN: {profile.ign}
+                    </p>
+                  )}
+                </div>
               </div>
 
-              {/* Name block */}
-              <div className="flex-1 min-w-0 pt-1">
-                <h1 className="text-xl font-black truncate" style={{ color: "var(--color-text-primary)" }}>
-                  {profile.display_name}
-                </h1>
-                <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>@{profile.username}</p>
-                {profile.ign && (
-                  <p className="text-xs mt-0.5 font-medium" style={{ color: "var(--color-cyan)" }}>
-                    IGN: {profile.ign}
-                  </p>
-                )}
-                {profile.bio && (
-                  <p className="text-sm mt-2 leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+              {/* Right 70%: Bio + Meta */}
+              <div className="flex-1 min-w-0 flex flex-col justify-between gap-4">
+                {profile.bio ? (
+                  <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
                     {profile.bio}
                   </p>
+                ) : (
+                  <span />
                 )}
+                <div className="flex flex-wrap gap-x-5 gap-y-2 pt-4 border-t text-sm font-medium"
+                  style={{ borderColor: "var(--color-border)", color: "var(--color-text-secondary)" }}>
+                  {profile.city && (
+                    <span className="flex items-center gap-1.5">
+                      <MapPin size={14} /> {profile.city}
+                    </span>
+                  )}
+                  {profile.birthday && (
+                    <span className="flex items-center gap-1.5">
+                      <Calendar size={14} /> {formatBirthday(profile.birthday)}
+                    </span>
+                  )}
+                  {zodiac && (
+                    <span className="flex items-center gap-1.5">
+                      <img
+                        src={`/${zodiac.sign}.svg`}
+                        alt={zodiac.sign}
+                        className="w-5 h-5"
+                        style={{ filter: "drop-shadow(0 0 4px rgba(139,92,246,0.7))" }}
+                      />
+                      {zodiac.sign}
+                    </span>
+                  )}
+                  {lifePathNumber && <span>Life Path {lifePathNumber}</span>}
+                </div>
               </div>
-            </div>
-
-            {/* Meta row */}
-            <div className="flex flex-wrap gap-4 mt-5 pt-5 border-t text-xs"
-              style={{ borderColor: "var(--color-border)", color: "var(--color-text-muted)" }}>
-              {profile.city && (
-                <span className="flex items-center gap-1">
-                  <MapPin size={12} /> {profile.city}
-                </span>
-              )}
-              {profile.birthday && (
-                <span className="flex items-center gap-1">
-                  <Calendar size={12} /> {formatBirthday(profile.birthday)}
-                </span>
-              )}
-              {zodiac && <span>{zodiac.symbol} {zodiac.sign}</span>}
-              {lifePathNumber && <span>Life Path {lifePathNumber}</span>}
             </div>
           </div>
 
@@ -155,7 +169,16 @@ export default function ProfilePage() {
                       className="flex items-center gap-2 px-3 py-2 rounded-xl"
                       style={{ backgroundColor: "var(--color-surface-elevated)", border: "1px solid var(--color-border)" }}
                     >
-                      <span className="text-base">{q.icon}</span>
+                      {q.slug === "zodiac" ? (
+                        <img
+                          src={`/${r.result_code}.svg`}
+                          alt={r.result_code}
+                          className="w-5 h-5"
+                          style={{ filter: "drop-shadow(0 0 4px rgba(139,92,246,0.7))" }}
+                        />
+                      ) : (
+                        <span className="text-base">{q.icon}</span>
+                      )}
                       <div>
                         <p className="text-xs font-bold" style={{ color: "var(--color-purple)" }}>{r.result_code}</p>
                         <p className="text-[10px]" style={{ color: "var(--color-text-muted)" }}>{q.shortName}</p>
@@ -190,7 +213,10 @@ function Section({ title, children, action }: {
     <div className="rounded-2xl border p-5"
       style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
+        <h2 className="text-sm font-bold uppercase tracking-wider" style={{
+          color: "var(--color-cyan)",
+          textShadow: "0 0 8px rgba(0, 255, 234, 0.45)",
+        }}>
           {title}
         </h2>
         {action && (
@@ -208,9 +234,12 @@ function FavCard({ icon, label, value }: { icon: React.ReactNode; label: string;
   return (
     <div className="flex items-start gap-2.5 p-3 rounded-xl"
       style={{ backgroundColor: "var(--color-bg)" }}>
-      <span style={{ color: "var(--color-text-muted)" }} className="mt-0.5">{icon}</span>
+      <span className="mt-0.5" style={{ color: "var(--color-cyan)", filter: "drop-shadow(0 0 4px rgba(0,255,234,0.5))" }}>{icon}</span>
       <div className="min-w-0">
-        <p className="text-xs mb-0.5" style={{ color: "var(--color-text-muted)" }}>{label}</p>
+        <p className="text-xs mb-0.5 font-semibold" style={{
+          color: "var(--color-cyan)",
+          textShadow: "0 0 6px rgba(0, 255, 234, 0.5)",
+        }}>{label}</p>
         <p className="text-sm font-medium truncate" style={{ color: "var(--color-text-primary)" }}>{value}</p>
       </div>
     </div>

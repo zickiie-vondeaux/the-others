@@ -259,13 +259,9 @@ img[loading="lazy"].loaded {
   background-color: #060610;
   background-image:
     radial-gradient(ellipse 75% 55% at 50% 50%, rgba(88, 28, 135, 0.45) 0%, transparent 70%),
-    repeating-linear-gradient(
-      -45deg,
-      #000 0px,
-      #000 14px,
-      #0c0c0c 14px,
-      #0c0c0c 28px
-    );
+    url('/mainbg.png');
+  background-size: cover;
+  background-position: center;
 }
 
 /* ── Glitch animation ───────────────────────────────────────── */
