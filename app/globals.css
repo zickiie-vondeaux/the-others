@@ -197,3 +197,110 @@ img[loading="lazy"].loaded {
 .pb-safe {
   padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
 }
+
+/* ── Cyberpunk auth background ──────────────────────────────── */
+
+.cyberpunk-bg {
+  background-color: #060610;
+  background-image:
+    radial-gradient(ellipse 75% 55% at 50% 50%, rgba(88, 28, 135, 0.45) 0%, transparent 70%),
+    repeating-linear-gradient(
+      -45deg,
+      #000 0px,
+      #000 14px,
+      #0c0c0c 14px,
+      #0c0c0c 28px
+    );
+}
+
+/* ── Glitch animation ───────────────────────────────────────── */
+
+@keyframes glitch {
+  0%   { text-shadow: 2px 0 #ff00ff, -2px 0 #00ffea; }
+  25%  { text-shadow: -2px 0 #ff00ff, 2px 0 #00ffea; }
+  50%  { text-shadow: 2px 2px #ff00ff, -2px -2px #00ffea; }
+  75%  { text-shadow: -2px -2px #ff00ff, 2px 2px #00ffea; }
+  100% { text-shadow: 2px 0 #ff00ff, -2px 0 #00ffea; }
+}
+
+.glitch-text {
+  color: #00ffea;
+  text-shadow: 2px 0 #ff00ff, -2px 0 #00ffea;
+  animation: glitch 1.5s infinite;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Neon card ──────────────────────────────────────────────── */
+
+.neon-card {
+  background: #09090f;
+  border: 1px solid #00ffea;
+  border-radius: 1.25rem;
+  box-shadow:
+    0 0 8px #00ffea,
+    0 0 24px rgba(0, 255, 234, 0.35),
+    0 0 60px rgba(0, 255, 234, 0.12),
+    inset 0 0 40px rgba(0, 255, 234, 0.03);
+}
+
+/* ── Neon input ─────────────────────────────────────────────── */
+
+.neon-input {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid #00ffea;
+  color: #f0f0f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 6px rgba(0, 255, 234, 0.3), inset 0 0 8px rgba(0, 255, 234, 0.04);
+  transition: box-shadow 0.15s ease;
+}
+
+.neon-input:focus {
+  outline: none;
+  box-shadow: 0 0 12px rgba(0, 255, 234, 0.6), inset 0 0 12px rgba(0, 255, 234, 0.08);
+}
+
+/* ── Neon gradient button ───────────────────────────────────── */
+
+.neon-btn-primary {
+  background: linear-gradient(90deg, #a855f7, #ec4899);
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.5), 0 0 28px rgba(236, 72, 153, 0.25);
+  transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.neon-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.15);
+  box-shadow: 0 0 22px rgba(168, 85, 247, 0.7), 0 0 44px rgba(236, 72, 153, 0.4);
+}
+
+.neon-btn-primary:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* ── Neon outline button ────────────────────────────────────── */
+
+.neon-btn-outline {
+  background: rgba(0, 255, 234, 0.06);
+  border: 1px solid #00ffea;
+  color: #00ffea;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 8px rgba(0, 255, 234, 0.2);
+  transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.neon-btn-outline:hover:not(:disabled) {
+  background: rgba(0, 255, 234, 0.12);
+  box-shadow: 0 0 16px rgba(0, 255, 234, 0.4);
+}
+
+.neon-btn-outline:active:not(:disabled) {
+  transform: scale(0.97);
+}
+/* force */

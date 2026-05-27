@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Gamepad2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
@@ -20,73 +19,44 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="w-full max-w-sm">
-      {/* Logo card */}
-      <div
-        className="rounded-2xl p-8 border text-center"
-        style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
-      >
-        {/* Icon */}
-        <div className="flex justify-center mb-6">
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, var(--color-purple), var(--color-cyan))" }}
-          >
-            <Gamepad2 size={32} color="white" />
-          </div>
-        </div>
+    <div className="neon-card w-full max-w-sm p-8 text-center">
+      <h1 className="glitch-text text-4xl font-black mb-1">THE OTHERS</h1>
+      <p className="text-sm mb-8" style={{ color: "#00ffea88" }}>
+        Apparently we&apos;re just acquaintances. Their loss.
+      </p>
 
-        {/* Title */}
-        <h1
-          className="text-3xl font-black tracking-tight mb-1"
-          style={{
-            background: "linear-gradient(135deg, var(--color-purple-light), var(--color-cyan-light))",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-          }}
+      <div className="space-y-3">
+        <button
+          onClick={() => signInWith("google")}
+          disabled={loading !== null}
+          className="neon-btn-primary w-full flex items-center justify-center gap-3 py-3 px-4 text-sm disabled:opacity-50"
         >
-          THE OTHERS
-        </h1>
-        <p className="text-sm mb-8" style={{ color: "var(--color-text-muted)" }}>
-          our private hub
-        </p>
+          {loading === "google" ? (
+            <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+          ) : (
+            <GoogleIcon />
+          )}
+          Continue with Google
+        </button>
 
-        {/* Auth buttons */}
-        <div className="space-y-3">
-          <button
-            onClick={() => signInWith("google")}
-            disabled={loading !== null}
-            className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-150 disabled:opacity-50 hover:brightness-110 active:scale-95"
-            style={{ backgroundColor: "var(--color-purple)", color: "white" }}
-          >
-            {loading === "google" ? (
-              <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
-            ) : (
-              <GoogleIcon />
-            )}
-            Continue with Google
-          </button>
-
-          <button
-            onClick={() => signInWith("discord")}
-            disabled={loading !== null}
-            className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-150 disabled:opacity-50 hover:brightness-110 active:scale-95"
-            style={{ backgroundColor: "#5865F2", color: "white" }}
-          >
-            {loading === "discord" ? (
-              <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
-            ) : (
-              <DiscordIcon />
-            )}
-            Continue with Discord
-          </button>
-        </div>
-
-        <p className="text-xs mt-6" style={{ color: "var(--color-text-muted)" }}>
-          Invite-only. Don&apos;t have an invite? Ask Zickiie.
-        </p>
+        <button
+          onClick={() => signInWith("discord")}
+          disabled={loading !== null}
+          className="neon-btn-outline w-full flex items-center justify-center gap-3 py-3 px-4 text-sm disabled:opacity-50"
+        >
+          {loading === "discord" ? (
+            <span className="animate-spin w-4 h-4 border-2 border-current/30 border-t-current rounded-full" />
+          ) : (
+            <DiscordIcon />
+          )}
+          Continue with Discord
+        </button>
       </div>
+
+      <p className="text-xs mt-6" style={{ color: "#00ffea66" }}>
+        No invite? You&apos;re probably still an acquaintance.{" "}
+        <span style={{ color: "#ec4899" }}>Ask Zickiie.</span>
+      </p>
     </div>
   );
 }
@@ -105,7 +75,7 @@ function GoogleIcon() {
 function DiscordIcon() {
   return (
     <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
-      <path d="M15.247 1.177A14.786 14.786 0 0 0 11.612 0c-.169.302-.366.709-.502 1.032a13.662 13.662 0 0 0-4.218 0A11.26 11.26 0 0 0 6.385 0a14.8 14.8 0 0 0-3.636 1.18C.394 4.607-.241 7.946.076 11.24c1.577 1.17 3.105 1.88 4.608 2.347.372-.508.703-1.049.988-1.62a9.68 9.68 0 0 1-1.555-.754c.13-.096.258-.196.381-.298 3 1.39 6.25 1.39 9.214 0 .124.102.252.202.381.298-.497.296-1.02.549-1.557.755.285.572.616 1.114.988 1.62 1.504-.467 3.034-1.177 4.61-2.349.378-3.984-.648-7.291-2.891-10.062zM6.012 9.211c-.908 0-1.65-.842-1.65-1.873s.726-1.875 1.65-1.875c.924 0 1.664.843 1.65 1.875.001 1.031-.726 1.873-1.65 1.873zm6.098 0c-.908 0-1.65-.842-1.65-1.873s.725-1.875 1.65-1.875c.923 0 1.663.843 1.65 1.875 0 1.031-.727 1.873-1.65 1.873z" fill="white"/>
+      <path d="M15.247 1.177A14.786 14.786 0 0 0 11.612 0c-.169.302-.366.709-.502 1.032a13.662 13.662 0 0 0-4.218 0A11.26 11.26 0 0 0 6.385 0a14.8 14.8 0 0 0-3.636 1.18C.394 4.607-.241 7.946.076 11.24c1.577 1.17 3.105 1.88 4.608 2.347.372-.508.703-1.049.988-1.62a9.68 9.68 0 0 1-1.555-.754c.13-.096.258-.196.381-.298 3 1.39 6.25 1.39 9.214 0 .124.102.252.202.381.298-.497.296-1.02.549-1.557.755.285.572.616 1.114.988 1.62 1.504-.467 3.034-1.177 4.61-2.349.378-3.984-.648-7.291-2.891-10.062zM6.012 9.211c-.908 0-1.65-.842-1.65-1.873s.726-1.875 1.65-1.875c.924 0 1.664.843 1.65 1.875.001 1.031-.726 1.873-1.65 1.873zm6.098 0c-.908 0-1.65-.842-1.65-1.873s.725-1.875 1.65-1.875c.923 0 1.663.843 1.65 1.875 0 1.031-.727 1.873-1.65 1.873z" fill="currentColor"/>
     </svg>
   );
 }
