@@ -67,3 +67,72 @@ export const PERSONAL_STATUS_META: Record<PersonalGameStatus, { label: string; i
   want_to_play:   { label: "Want to play",   icon: "⭐" },
   not_interested: { label: "Not interested", icon: "👻" },
 };
+
+// ── Movies ─────────────────────────────────────────────────────
+
+export type GroupMovieStatus = "queue" | "watching" | "watched" | "dropped";
+export type PersonalMovieStatus = "watched" | "watching" | "want_to_watch" | "not_interested";
+
+export interface Movie {
+  id: string;
+  omdb_id: string | null;
+  title: string;
+  poster_url: string | null;
+  release_year: number | null;
+  genres: string[];
+  runtime_minutes: number | null;
+  overview: string | null;
+  director: string | null;
+  group_status: GroupMovieStatus;
+  added_by: string | null;
+  created_at: string;
+}
+
+export interface UserMovieStatus {
+  id: string;
+  user_id: string;
+  movie_id: string;
+  status: PersonalMovieStatus;
+  watched_at: string | null;
+  created_at: string;
+}
+
+export interface Poll {
+  id: string;
+  title: string;
+  created_by: string | null;
+  closes_at: string | null;
+  is_closed: boolean;
+  hide_until_closed: boolean;
+  winning_movie_id: string | null;
+  created_at: string;
+}
+
+export interface PollOption {
+  id: string;
+  poll_id: string;
+  movie_id: string;
+  position: number;
+}
+
+export interface PollVote {
+  id: string;
+  poll_id: string;
+  user_id: string;
+  rankings: { option_id: string; rank: number }[];
+  created_at: string;
+}
+
+export const GROUP_MOVIE_STATUS_META: Record<GroupMovieStatus, { label: string; color: string; bg: string }> = {
+  queue:    { label: "Watch Queue",  color: "var(--color-purple)", bg: "rgba(124,58,237,0.15)"  },
+  watching: { label: "Watching",     color: "var(--color-cyan)",   bg: "rgba(6,182,212,0.15)"   },
+  watched:  { label: "Watched",      color: "var(--color-green)",  bg: "rgba(16,185,129,0.15)"  },
+  dropped:  { label: "Did Not Finish", color: "var(--color-text-muted)", bg: "rgba(71,85,105,0.15)" },
+};
+
+export const PERSONAL_MOVIE_STATUS_META: Record<PersonalMovieStatus, { label: string; icon: string }> = {
+  watched:        { label: "Watched",        icon: "✅" },
+  watching:       { label: "Watching",       icon: "👀" },
+  want_to_watch:  { label: "Want to watch",  icon: "⭐" },
+  not_interested: { label: "Not interested", icon: "👻" },
+};
