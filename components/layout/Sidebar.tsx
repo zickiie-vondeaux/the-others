@@ -34,21 +34,41 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 h-full border-r shrink-0"
-      style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
-
+    <aside
+      className="hidden lg:flex flex-col w-64 h-full shrink-0"
+      style={{
+        backgroundColor: "#08081a",
+        borderRight: "1px solid rgba(0, 255, 234, 0.2)",
+        boxShadow: "2px 0 20px rgba(0, 255, 234, 0.06)",
+      }}
+    >
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-6 border-b"
-        style={{ borderColor: "var(--color-border)" }}>
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black"
-          style={{ background: "linear-gradient(135deg, var(--color-purple), var(--color-cyan))" }}>
+      <div
+        className="flex items-center gap-3 px-6 py-6"
+        style={{ borderBottom: "1px solid rgba(0, 255, 234, 0.12)" }}
+      >
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black"
+          style={{
+            background: "linear-gradient(135deg, #8b5cf6, #00ffea)",
+            boxShadow: "0 0 10px rgba(0, 255, 234, 0.4)",
+          }}
+        >
           T
         </div>
         <div>
-          <p className="font-bold text-sm tracking-wide" style={{ color: "var(--color-text-primary)" }}>
-            THE OTHERS
+          <p
+            className="font-black text-sm tracking-widest uppercase"
+            style={{
+              color: "#00ffea",
+              textShadow: "0 0 8px rgba(0, 255, 234, 0.6)",
+            }}
+          >
+            The Others
           </p>
-          <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>private hub</p>
+          <p className="text-xs" style={{ color: "rgba(0, 255, 234, 0.35)" }}>
+            private hub
+          </p>
         </div>
       </div>
 
@@ -62,22 +82,43 @@ export function Sidebar() {
               href={href}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group",
-                active
-                  ? "text-cyan-400 bg-cyan-400/10 border-l-2 border-cyan-400 pl-[10px]"
-                  : "hover:bg-white/5"
+                active ? "pl-[10px]" : ""
               )}
-              style={{ color: active ? "var(--color-cyan)" : "var(--color-text-secondary)" }}
+              style={
+                active
+                  ? {
+                      color: "#00ffea",
+                      backgroundColor: "rgba(0, 255, 234, 0.08)",
+                      borderLeft: "2px solid #00ffea",
+                      boxShadow: "inset 0 0 20px rgba(0, 255, 234, 0.04), 0 0 8px rgba(0, 255, 234, 0.1)",
+                    }
+                  : {
+                      color: "var(--color-text-secondary)",
+                    }
+              }
+              onMouseEnter={e => {
+                if (!active) {
+                  (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0, 255, 234, 0.04)";
+                  (e.currentTarget as HTMLElement).style.color = "rgba(0, 255, 234, 0.7)";
+                }
+              }}
+              onMouseLeave={e => {
+                if (!active) {
+                  (e.currentTarget as HTMLElement).style.backgroundColor = "";
+                  (e.currentTarget as HTMLElement).style.color = "var(--color-text-secondary)";
+                }
+              }}
             >
               <Icon size={18} strokeWidth={active ? 2.5 : 2} />
               <span>{label}</span>
-              {active && <ChevronRight size={14} className="ml-auto" />}
+              {active && <ChevronRight size={14} className="ml-auto opacity-60" />}
             </Link>
           );
         })}
       </nav>
 
       {/* Divider */}
-      <div className="mx-3 border-t" style={{ borderColor: "var(--color-border)" }} />
+      <div className="mx-3" style={{ borderTop: "1px solid rgba(0, 255, 234, 0.08)" }} />
 
       {/* Bottom nav */}
       <nav className="py-4 px-3 space-y-1">
@@ -87,11 +128,24 @@ export function Sidebar() {
             <Link
               key={href}
               href={href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
-                active ? "text-cyan-400 bg-cyan-400/10" : "hover:bg-white/5"
-              )}
-              style={{ color: active ? "var(--color-cyan)" : "var(--color-text-muted)" }}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
+              style={
+                active
+                  ? { color: "#00ffea", backgroundColor: "rgba(0, 255, 234, 0.08)" }
+                  : { color: "var(--color-text-muted)" }
+              }
+              onMouseEnter={e => {
+                if (!active) {
+                  (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0, 255, 234, 0.04)";
+                  (e.currentTarget as HTMLElement).style.color = "rgba(0, 255, 234, 0.5)";
+                }
+              }}
+              onMouseLeave={e => {
+                if (!active) {
+                  (e.currentTarget as HTMLElement).style.backgroundColor = "";
+                  (e.currentTarget as HTMLElement).style.color = "var(--color-text-muted)";
+                }
+              }}
             >
               <Icon size={17} />
               <span>{label}</span>
@@ -99,14 +153,26 @@ export function Sidebar() {
           );
         })}
 
-        {/* Admin link — shown to all for now, will be gated by role */}
         <Link
           href="/admin"
-          className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150",
-            pathname.startsWith("/admin") ? "text-amber-400 bg-amber-400/10" : "hover:bg-white/5"
-          )}
-          style={{ color: pathname.startsWith("/admin") ? "var(--color-amber)" : "var(--color-text-muted)" }}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
+          style={
+            pathname.startsWith("/admin")
+              ? { color: "var(--color-amber)", backgroundColor: "rgba(245, 158, 11, 0.08)" }
+              : { color: "var(--color-text-muted)" }
+          }
+          onMouseEnter={e => {
+            if (!pathname.startsWith("/admin")) {
+              (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(0, 255, 234, 0.04)";
+              (e.currentTarget as HTMLElement).style.color = "rgba(0, 255, 234, 0.5)";
+            }
+          }}
+          onMouseLeave={e => {
+            if (!pathname.startsWith("/admin")) {
+              (e.currentTarget as HTMLElement).style.backgroundColor = "";
+              (e.currentTarget as HTMLElement).style.color = "var(--color-text-muted)";
+            }
+          }}
         >
           <Shield size={17} />
           <span>Admin Panel</span>

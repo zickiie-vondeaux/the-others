@@ -18,8 +18,12 @@ export function MobileNav() {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 border-t z-50 flex pb-safe"
-      style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex pb-safe"
+      style={{
+        backgroundColor: "#08081a",
+        borderTop: "1px solid rgba(0, 255, 234, 0.2)",
+        boxShadow: "0 -4px 20px rgba(0, 255, 234, 0.06)",
+      }}
     >
       {navItems.map(({ href, label, icon: Icon }) => {
         const active = pathname.startsWith(href);
@@ -29,10 +33,21 @@ export function MobileNav() {
             href={href}
             aria-label={label}
             aria-current={active ? "page" : undefined}
-            className="flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-medium transition-all active:scale-90"
-            style={{ color: active ? "var(--color-cyan)" : "var(--color-text-muted)" }}
+            className={cn(
+              "flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-medium transition-all active:scale-90",
+            )}
+            style={{
+              color: active ? "#00ffea" : "var(--color-text-muted)",
+              textShadow: active ? "0 0 8px rgba(0, 255, 234, 0.6)" : "none",
+            }}
           >
-            <span className={active ? "nav-active-glow" : ""}>
+            <span
+              style={
+                active
+                  ? { filter: "drop-shadow(0 0 6px rgba(0, 255, 234, 0.8))" }
+                  : undefined
+              }
+            >
               <Icon size={20} strokeWidth={active ? 2.5 : 2} />
             </span>
             <span>{label}</span>

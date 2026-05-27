@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-bg: #0f0f1a;
-  --color-surface: #1a1a2e;
-  --color-surface-elevated: #16213e;
-  --color-border: #2d2d4a;
+  --color-bg: #060610;
+  --color-surface: #0d0d1f;
+  --color-surface-elevated: #13132a;
+  --color-border: #1e1e42;
 
-  --color-purple: #7c3aed;
-  --color-purple-light: #a855f7;
-  --color-cyan: #06b6d4;
-  --color-cyan-light: #22d3ee;
+  --color-purple: #8b5cf6;
+  --color-purple-light: #c084fc;
+  --color-cyan: #00ffea;
+  --color-cyan-light: #66ffef;
   --color-green: #10b981;
   --color-amber: #f59e0b;
   --color-red: #ef4444;
   --color-gold: #fbbf24;
 
-  --color-text-primary: #f1f5f9;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #475569;
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #7c8fa8;
+  --color-text-muted: #3d4f63;
 
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
@@ -196,6 +196,22 @@ img[loading="lazy"].loaded {
 
 .pb-safe {
   padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+
+/* ── Cyberpunk app background ───────────────────────────────── */
+
+.app-bg {
+  background-color: #060610;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 15% 40%, rgba(88, 28, 135, 0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 75%, rgba(0, 255, 234, 0.05) 0%, transparent 50%),
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0px,
+      transparent 24px,
+      rgba(255, 255, 255, 0.012) 24px,
+      rgba(255, 255, 255, 0.012) 48px
+    );
 }
 
 /* ── Cyberpunk auth background ──────────────────────────────── */
