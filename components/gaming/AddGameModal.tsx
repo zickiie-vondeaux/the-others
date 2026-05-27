@@ -4,8 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { GROUP_STATUS_META, type GroupGameStatus } from "@/lib/supabase/types";
-import type { NormalizedGame } from "@/lib/igdb";
-import { Search, X, Gamepad2, Plus, Loader2, ChevronDown } from "lucide-react";
+import type { NormalizedGame } from "@/lib/rawg";
+import { Search, X, Gamepad2, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface Props {
@@ -49,7 +49,7 @@ export function AddGameModal({ userId, onClose, onAdded }: Props) {
     searchRef.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await fetch(`/api/igdb?q=${encodeURIComponent(query.trim())}`);
+        const res = await fetch(`/api/games?q=${encodeURIComponent(query.trim())}`);
         if (res.ok) {
           const data = await res.json();
           setResults(Array.isArray(data) ? data : []);
@@ -73,7 +73,7 @@ export function AddGameModal({ userId, onClose, onAdded }: Props) {
 
     if (tab === "search" && selected) {
       payload = {
-        igdb_id: selected.igdb_id,
+        igdb_id: selected.rawg_id,
         title: selected.title,
         cover_url: selected.cover_url,
         release_year: selected.release_year,
@@ -184,7 +184,7 @@ export function AddGameModal({ userId, onClose, onAdded }: Props) {
 
                 {!igdbAvailable && (
                   <p className="text-xs px-1" style={{ color: "var(--color-amber)" }}>
-                    IGDB credentials not configured — results unavailable. Use Manual Entry instead.
+                    RAWG API key not configured — results unavailable. Use Manual Entry instead.
                   </p>
                 )}
 
@@ -194,7 +194,7 @@ export function AddGameModal({ userId, onClose, onAdded }: Props) {
                     style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-surface)" }}>
                     {results.map(g => (
                       <button
-                        key={g.igdb_id}
+                        key={g.rawg_id}
                         onClick={() => setSelected(g)}
                         className="flex items-center gap-3 w-full p-3 hover:bg-white/5 transition-colors text-left"
                       >
