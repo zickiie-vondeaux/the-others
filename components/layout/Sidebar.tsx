@@ -36,11 +36,15 @@ const bottomItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const stored = localStorage.getItem("sidebar-open");
     if (stored !== null) setOpen(stored === "true");
   }, []);
+
+  const isOpen = mounted ? open : true;
 
   const toggle = () => {
     setOpen(prev => {
@@ -53,7 +57,7 @@ export function Sidebar() {
   return (
     <>
       {/* Floating re-open button when sidebar is hidden */}
-      {!open && (
+      {!isOpen && (
         <button
           onClick={toggle}
           className="hidden lg:flex fixed top-5 left-4 z-50 items-center justify-center w-8 h-8 rounded-lg transition-all hover:scale-110"
@@ -72,13 +76,13 @@ export function Sidebar() {
     <aside
       className="hidden lg:flex flex-col h-full shrink-0 overflow-hidden"
       style={{
-        width: open ? "256px" : "0px",
+        width: isOpen ? "256px" : "0px",
         transition: "width 0.25s ease",
         backgroundColor: "rgba(6,6,20,0.72)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
-        borderRight: open ? "1px solid rgba(0, 255, 234, 0.2)" : "none",
-        boxShadow: open ? "2px 0 20px rgba(0, 255, 234, 0.06)" : "none",
+        borderRight: isOpen ? "1px solid rgba(0, 255, 234, 0.2)" : "none",
+        boxShadow: isOpen ? "2px 0 20px rgba(0, 255, 234, 0.06)" : "none",
       }}
     >
       {/* Logo */}

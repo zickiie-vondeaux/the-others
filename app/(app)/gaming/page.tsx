@@ -545,8 +545,8 @@ function ListRow({
   onSelect: () => void;
 }) {
   return (
-    <button onClick={onClick}
-      className="w-full flex items-center gap-4 p-3 rounded-xl border text-left transition-colors hover:bg-white/5"
+    <div role="button" tabIndex={0} onClick={onClick} onKeyDown={e => e.key === "Enter" && onClick()}
+      className="w-full flex items-center gap-4 p-3 rounded-xl border text-left transition-colors hover:bg-white/5 cursor-pointer"
       style={{
         backgroundColor: "var(--color-surface)",
         borderColor: isSelected ? "var(--color-purple)" : "var(--color-border)",
@@ -596,6 +596,6 @@ function ListRow({
           </button>
         )}
       </div>
-    </button>
+    </div>
   );
 }
