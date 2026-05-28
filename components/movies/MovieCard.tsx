@@ -1,29 +1,8 @@
 "use client";
 
-import { Film, Trash2, Star, Clock } from "lucide-react";
+import { Film, Trash2, Clock } from "lucide-react";
+import { StarRow } from "../gaming/StarDisplay";
 import type { Movie } from "@/lib/supabase/types";
-
-interface Props {
-  movie: Movie;
-  myRating: number | null;
-  avgRating: number | null;
-  ratingCount: number;
-  onClick: () => void;
-  onDelete?: () => void;
-}
-
-function StarRow({ value, size = 11 }: { value: number; size?: number }) {
-  return (
-    <span className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map(s => (
-        <Star key={s} size={size}
-          fill={s <= Math.round(value) ? "currentColor" : "none"}
-          style={{ color: s <= Math.round(value) ? "var(--color-gold)" : "var(--color-border)" }}
-        />
-      ))}
-    </span>
-  );
-}
 
 export function MovieCard({ movie, myRating, avgRating, ratingCount, onClick, onDelete }: Props) {
   return (

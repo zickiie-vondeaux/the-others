@@ -156,7 +156,7 @@ export interface MovieReview {
   id: string;
   user_id: string;
   movie_id: string;
-  rating: 1 | 2 | 3 | 4 | 5;
+  rating: number;
   review_text: string | null;
   created_at: string;
   updated_at: string;
