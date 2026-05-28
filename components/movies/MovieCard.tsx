@@ -4,6 +4,15 @@ import { Film, Trash2, Clock } from "lucide-react";
 import { StarRow } from "../gaming/StarDisplay";
 import type { Movie } from "@/lib/supabase/types";
 
+interface Props {
+  movie: Movie;
+  myRating: number | null;
+  avgRating: number | null;
+  ratingCount: number;
+  onClick: () => void;
+  onDelete?: () => void;
+}
+
 export function MovieCard({ movie, myRating, avgRating, ratingCount, onClick, onDelete }: Props) {
   return (
     <button onClick={onClick}
