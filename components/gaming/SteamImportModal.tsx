@@ -169,9 +169,11 @@ export function SteamImportModal({ userId, steamId, existingSteamIds, onClose, o
             <div className="flex-1 flex flex-col items-center justify-center gap-3 px-8 py-16 text-center">
               <AlertCircle size={28} style={{ color: "var(--color-red)" }} />
               <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>{error}</p>
-              <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                Go to Steam → Settings → Privacy → Game Details → set to Public
-              </p>
+              {!error.toLowerCase().includes("not configured") && (
+                <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                  Go to Steam → Settings → Privacy → Game Details → set to Public
+                </p>
+              )}
             </div>
           ) : (
             <>
