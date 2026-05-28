@@ -24,7 +24,7 @@ export interface Profile {
   last_active_at: string;
 }
 
-export const PLATFORMS = ["PC", "PS5", "Xbox", "Switch", "Mobile"] as const;
+export const PLATFORMS = ["PC", "macOS", "PS5", "Xbox", "Switch", "Mobile"] as const;
 export type Platform = (typeof PLATFORMS)[number];
 
 // ── Gaming ─────────────────────────────────────────────────────
@@ -146,7 +146,7 @@ export interface GameReview {
   id: string;
   user_id: string;
   game_id: string;
-  rating: 1 | 2 | 3 | 4 | 5;
+  rating: number;
   review_text: string | null;
   created_at: string;
   updated_at: string;

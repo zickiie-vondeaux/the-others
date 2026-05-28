@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { TopBar } from "@/components/layout/TopBar";
 import { QuizEngine } from "@/components/personality/QuizEngine";
+import { QuizStartModal } from "@/components/personality/QuizStartModal";
 import { ResultReveal } from "@/components/personality/ResultReveal";
 import { PersonalityCard, MemberPersonalityChips } from "@/components/personality/PersonalityCard";
 import { createClient } from "@/lib/supabase/client";
@@ -32,6 +33,7 @@ export default function PersonalityPage() {
   const [showBirthdayPicker, setShowBirthdayPicker] = useState(false);
 
   // Quiz flow
+  const [previewQuiz, setPreviewQuiz] = useState<Quiz | null>(null);
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
   const [pending, setPending] = useState<PendingResult | null>(null);
 
@@ -94,6 +96,13 @@ export default function PersonalityPage() {
     setPending({ quizResult: result, slug: activeQuiz.slug, saved });
   }, [activeQuiz, saveResult]);
 
+  const handleManualResult = useCallback(async (quiz: Quiz, code: string, label: string) => {
+    setPreviewQuiz(null);
+    const result: QuizResult = { code, label, description: "", characters: [] };
+    const saved = await saveResult(quiz.slug, result);
+    setPending({ quizResult: result, slug: quiz.slug, saved });
+  }, [saveResult]);
+
   const handleAutoCalc = useCallback(async (slug: AutoCalcSlug) => {
     if (!birthday) { setShowBirthdayPicker(true); return; }
     const [yearStr, monthStr, dayStr] = birthday.split("-");
@@ -124,6 +133,15 @@ export default function PersonalityPage() {
   return (
     <>
       <TopBar title="Personality Corner" />
+
+      {previewQuiz && (
+        <QuizStartModal
+          quiz={previewQuiz}
+          onTakeTest={() => { setActiveQuiz(previewQuiz); setPreviewQuiz(null); }}
+          onEnterResult={(code, label) => handleManualResult(previewQuiz, code, label)}
+          onClose={() => setPreviewQuiz(null)}
+        />
+      )}
 
       {activeQuiz && (
         <QuizEngine
@@ -173,7 +191,7 @@ export default function PersonalityPage() {
                   key={quiz.slug}
                   result={myResultMap[quiz.slug] ?? null}
                   slug={quiz.slug}
-                  onTake={() => setActiveQuiz(quiz)}
+                  onTake={() => setPreviewQuiz(quiz)}
                 />
               ))}
             </div>

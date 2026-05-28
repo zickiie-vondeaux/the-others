@@ -4,7 +4,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { type Game, type GameReview, type Profile } from "@/lib/supabase/types";
-import { X, Gamepad2, Users, CalendarPlus, Trash2, Loader2, Star } from "lucide-react";
+import { X, Gamepad2, Users, CalendarPlus, Trash2, Loader2 } from "lucide-react";
+import { HalfStar, StarRow } from "./StarDisplay";
 
 export interface GameReviewWithProfile {
   review: GameReview;
@@ -26,21 +27,29 @@ interface Props {
 function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [hover, setHover] = useState(0);
   const active = hover || value;
+
+  const halfValueAt = (e: React.MouseEvent<HTMLButtonElement>, s: number) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    return e.clientX < rect.left + rect.width / 2 ? s - 0.5 : s;
+  };
+
   return (
     <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map(s => (
-        <button key={s}
-          onClick={() => onChange(value === s ? 0 : s)}
-          onMouseEnter={() => setHover(s)}
-          onMouseLeave={() => setHover(0)}
-          className="transition-transform hover:scale-110"
-          aria-label={`Rate ${s} star${s !== 1 ? "s" : ""}`}>
-          <Star size={30}
-            fill={s <= active ? "currentColor" : "none"}
-            style={{ color: s <= active ? "var(--color-gold)" : "var(--color-border)" }}
-          />
-        </button>
-      ))}
+      {[1, 2, 3, 4, 5].map(s => {
+        const isFull = active >= s;
+        const isHalf = !isFull && active >= s - 0.5;
+        return (
+          <button key={s}
+            onMouseMove={e => setHover(halfValueAt(e, s))}
+            onMouseLeave={() => setHover(0)}
+            onClick={e => { const v = halfValueAt(e, s); onChange(value === v ? 0 : v); }}
+            className="transition-transform hover:scale-110"
+            aria-label={`Rate ${s - 0.5}–${s} stars`}>
+            <HalfStar size={30} isFull={isFull} isHalf={isHalf}
+              color="var(--color-gold)" emptyColor="var(--color-border)" />
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -160,12 +169,7 @@ export function GameDetailModal({
                 <div className="flex items-center gap-2 mt-3">
                   {avgRating !== null ? (
                     <>
-                      <span className="flex gap-0.5">
-                        {[1,2,3,4,5].map(s => (
-                          <Star key={s} size={13} fill={s <= Math.round(avgRating) ? "currentColor" : "none"}
-                            style={{ color: s <= Math.round(avgRating) ? "var(--color-gold)" : "var(--color-border)" }} />
-                        ))}
-                      </span>
+                      <StarRow value={avgRating} size={13} />
                       <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>
                         {avgRating.toFixed(1)} · {memberReviews.length}/{totalMembers} rated
                       </span>
@@ -191,7 +195,7 @@ export function GameDetailModal({
                 <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--color-text-muted)" }}>My Rating</p>
                 <StarPicker value={rating} onChange={setRating} />
                 {rating > 0 && (
-                  <p className="text-xs mt-1.5" style={{ color: "var(--color-gold)" }}>{RATING_LABELS[rating]}</p>
+                  <p className="text-xs mt-1.5" style={{ color: "var(--color-gold)" }}>{RATING_LABELS[Math.round(rating)]}</p>
                 )}
 
                 <textarea
@@ -241,12 +245,7 @@ export function GameDetailModal({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>{profile.display_name}</span>
-                            <span className="flex gap-0.5">
-                              {[1,2,3,4,5].map(s => (
-                                <Star key={s} size={10} fill={s <= review.rating ? "currentColor" : "none"}
-                                  style={{ color: s <= review.rating ? "var(--color-gold)" : "var(--color-border)" }} />
-                              ))}
-                            </span>
+                            <StarRow value={review.rating} size={10} />
                           </div>
                           {review.review_text && (
                             <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--color-text-muted)" }}>{review.review_text}</p>

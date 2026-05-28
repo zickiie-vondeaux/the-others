@@ -1,6 +1,7 @@
 "use client";
 
-import { Gamepad2, Trash2, Star, Check } from "lucide-react";
+import { Gamepad2, Trash2, Check } from "lucide-react";
+import { StarRow } from "./StarDisplay";
 import type { Game } from "@/lib/supabase/types";
 
 interface Props {
@@ -15,18 +16,6 @@ interface Props {
   onSelect?: (e: React.MouseEvent) => void;
 }
 
-function StarRow({ value, size = 11 }: { value: number; size?: number }) {
-  return (
-    <span className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map(s => (
-        <Star key={s} size={size}
-          fill={s <= Math.round(value) ? "currentColor" : "none"}
-          style={{ color: s <= Math.round(value) ? "var(--color-gold)" : "var(--color-border)" }}
-        />
-      ))}
-    </span>
-  );
-}
 
 export function GameCard({ game, myRating, avgRating, ratingCount, onClick, onDelete, selectMode, isSelected, onSelect }: Props) {
   return (
