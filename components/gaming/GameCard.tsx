@@ -91,10 +91,10 @@ export function GameCard({ game, myRating, avgRating, ratingCount, onClick, onDe
             </div>
           ) : (
             <button onClick={e => { e.stopPropagation(); setPendingDelete(true); }}
-              className="absolute bottom-2 left-2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-              style={{ backgroundColor: "rgba(0,0,0,0.7)", color: "#ef4444" }}
+              className="absolute bottom-2 left-2 p-2 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{ backgroundColor: "rgba(0,0,0,0.75)", color: "#ef4444" }}
               aria-label="Remove game">
-              <Trash2 size={12} />
+              <Trash2 size={18} />
             </button>
           )
         )}

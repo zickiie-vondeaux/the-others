@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { searchGames, getGame } from "@/lib/rawg";
 
 export async function GET(req: NextRequest) {
@@ -26,4 +27,33 @@ export async function GET(req: NextRequest) {
     console.error("RAWG error:", e);
     return NextResponse.json({ error: "Game search failed" }, { status: 500 });
   }
+}
+
+export async function DELETE(req: NextRequest) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const gameId = req.nextUrl.searchParams.get("id");
+  if (!gameId) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+  const [{ data: game }, { data: profile }] = await Promise.all([
+    supabase.from("games").select("added_by").eq("id", gameId).single(),
+    supabase.from("profiles").select("role").eq("id", user.id).single(),
+  ]);
+
+  if (!game) return NextResponse.json({ error: "Game not found" }, { status: 404 });
+
+  const canDelete =
+    profile?.role === "super_admin" ||
+    profile?.role === "moderator" ||
+    game.added_by === user.id;
+
+  if (!canDelete) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const admin = createAdminClient();
+  await admin.from("game_reviews").delete().eq("game_id", gameId);
+  await admin.from("games").delete().eq("id", gameId);
+
+  return NextResponse.json({ success: true });
 }

@@ -105,9 +105,7 @@ export default function GamingPage() {
   }
 
   async function deleteGame(gameId: string) {
-    const supabase = createClient();
-    await supabase.from("game_reviews").delete().eq("game_id", gameId);
-    await supabase.from("games").delete().eq("id", gameId);
+    await fetch(`/api/games?id=${gameId}`, { method: "DELETE" });
     fetchData();
   }
 
