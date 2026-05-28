@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { TopBar } from "@/components/layout/TopBar";
 import { createClient } from "@/lib/supabase/client";
 import { PLATFORMS } from "@/lib/supabase/types";
-import { Check, ArrowLeft } from "lucide-react";
+import { Check, ArrowLeft, Loader2, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils/cn";
 
@@ -19,29 +19,37 @@ export default function EditProfilePage() {
     avatar_url: "", bio: "", birthday: "", city: "",
     favorite_game: "", favorite_movie: "", favorite_food: "",
     favorite_color: "#7c3aed", favorite_music: "", platforms: [] as string[],
+    steam_id: "",
   });
+  const [steamInput, setSteamInput] = useState("");
+  const [steamConnecting, setSteamConnecting] = useState(false);
+  const [steamError, setSteamError] = useState("");
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return;
       const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-      if (data) setForm({
-        display_name: data.display_name ?? "",
-        username: data.username ?? "",
-        ign: data.ign ?? "",
-        real_name: data.real_name ?? "",
-        avatar_url: data.avatar_url ?? "",
-        bio: data.bio ?? "",
-        birthday: data.birthday ?? "",
-        city: data.city ?? "",
-        favorite_game: data.favorite_game ?? "",
-        favorite_movie: data.favorite_movie ?? "",
-        favorite_food: data.favorite_food ?? "",
-        favorite_color: data.favorite_color ?? "#7c3aed",
-        favorite_music: data.favorite_music ?? "",
-        platforms: data.platforms ?? [],
-      });
+      if (data) {
+        setForm({
+          display_name: data.display_name ?? "",
+          username: data.username ?? "",
+          ign: data.ign ?? "",
+          real_name: data.real_name ?? "",
+          avatar_url: data.avatar_url ?? "",
+          bio: data.bio ?? "",
+          birthday: data.birthday ?? "",
+          city: data.city ?? "",
+          favorite_game: data.favorite_game ?? "",
+          favorite_movie: data.favorite_movie ?? "",
+          favorite_food: data.favorite_food ?? "",
+          favorite_color: data.favorite_color ?? "#7c3aed",
+          favorite_music: data.favorite_music ?? "",
+          platforms: data.platforms ?? [],
+          steam_id: data.steam_id ?? "",
+        });
+        setSteamInput(data.steam_id ?? "");
+      }
     });
   }, []);
 
@@ -56,6 +64,40 @@ export default function EditProfilePage() {
         ? f.platforms.filter(x => x !== p)
         : [...f.platforms, p],
     }));
+  }
+
+  async function connectSteam() {
+    const input = steamInput.trim();
+    if (!input) return;
+    setSteamConnecting(true);
+    setSteamError("");
+
+    try {
+      // If it looks like a 64-bit Steam ID (all digits, 17 chars), use directly
+      const isSteamId = /^\d{17}$/.test(input);
+      let steamId = input;
+
+      if (!isSteamId) {
+        // Strip URL cruft and resolve vanity URL
+        const vanity = input
+          .replace(/^https?:\/\/(www\.)?steamcommunity\.com\/(id\/)?/, "")
+          .replace(/\/$/, "");
+        const res = await fetch(`/api/steam?action=resolve&vanityurl=${encodeURIComponent(vanity)}`);
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          setSteamError(data.error ?? "Could not resolve Steam URL");
+          setSteamConnecting(false);
+          return;
+        }
+        steamId = data.steamid;
+      }
+
+      setForm(f => ({ ...f, steam_id: steamId }));
+    } catch {
+      setSteamError("Failed to connect Steam. Try again.");
+    } finally {
+      setSteamConnecting(false);
+    }
   }
 
   async function save() {
@@ -164,6 +206,63 @@ export default function EditProfilePage() {
                   <span className="text-sm font-mono" style={{ color: "var(--color-text-secondary)" }}>{form.favorite_color}</span>
                 </div>
               </Field>
+            </Card>
+
+            <Card title="Connected Accounts">
+              <div className="space-y-3">
+                <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                  Connect your Steam account to import your game library.{" "}
+                  <a href="https://steamcommunity.com/dev/apikey" target="_blank" rel="noreferrer"
+                    className="inline-flex items-center gap-0.5 underline underline-offset-2"
+                    style={{ color: "var(--color-cyan)" }}>
+                    Steam privacy must be set to Public
+                    <ExternalLink size={10} />
+                  </a>
+                </p>
+
+                {form.steam_id ? (
+                  <div className="flex items-center gap-3 p-3 rounded-xl border"
+                    style={{ borderColor: "var(--color-green)", backgroundColor: "color-mix(in srgb, var(--color-green) 8%, transparent)" }}>
+                    <Check size={15} style={{ color: "var(--color-green)" }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium" style={{ color: "var(--color-green)" }}>Steam Connected</p>
+                      <p className="text-xs font-mono truncate" style={{ color: "var(--color-text-muted)" }}>{form.steam_id}</p>
+                    </div>
+                    <button onClick={() => { setForm(f => ({ ...f, steam_id: "" })); setSteamInput(""); }}
+                      className="text-xs px-2 py-1 rounded-lg hover:bg-white/5 transition-colors"
+                      style={{ color: "var(--color-text-muted)" }}>
+                      Disconnect
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Field label="Steam ID or Profile URL">
+                      <div className="flex gap-2">
+                        <input
+                          value={steamInput}
+                          onChange={e => { setSteamInput(e.target.value); setSteamError(""); }}
+                          placeholder="76561198... or steamcommunity.com/id/yourname"
+                          className="flex-1 rounded-xl px-4 py-3 text-sm outline-none border focus:border-purple-500/60"
+                          style={{ backgroundColor: "var(--color-bg)", color: "var(--color-text-primary)", borderColor: "var(--color-border)" }}
+                        />
+                        <button
+                          onClick={connectSteam}
+                          disabled={!steamInput.trim() || steamConnecting}
+                          className="px-4 py-2 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                          style={{ backgroundColor: "var(--color-cyan)", color: "#000" }}>
+                          {steamConnecting
+                            ? <Loader2 size={14} className="animate-spin" />
+                            : "Connect"
+                          }
+                        </button>
+                      </div>
+                    </Field>
+                    {steamError && (
+                      <p className="text-xs" style={{ color: "var(--color-red)" }}>{steamError}</p>
+                    )}
+                  </div>
+                )}
+              </div>
             </Card>
 
             {error && (

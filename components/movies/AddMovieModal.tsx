@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
-import { GROUP_MOVIE_STATUS_META, type GroupMovieStatus } from "@/lib/supabase/types";
 import type { OMDbSearchResult, NormalizedMovie } from "@/lib/omdb";
 import { Search, X, Film, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
@@ -17,7 +16,6 @@ interface Props {
 }
 
 type Tab = "search" | "manual";
-const STATUS_OPTIONS: GroupMovieStatus[] = ["queue", "watching", "watched", "dropped"];
 
 export function AddMovieModal({ userId, onClose, onAdded }: Props) {
   const { triggerCheck } = useAchievements();
@@ -27,7 +25,6 @@ export function AddMovieModal({ userId, onClose, onAdded }: Props) {
   const [searching, setSearching] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [selected, setSelected] = useState<NormalizedMovie | null>(null);
-  const [groupStatus, setGroupStatus] = useState<GroupMovieStatus>("queue");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [omdbAvailable, setOmdbAvailable] = useState(true);
@@ -76,11 +73,11 @@ export function AddMovieModal({ userId, onClose, onAdded }: Props) {
     let payload: Record<string, unknown>;
 
     if (tab === "search" && selected) {
-      payload = { omdb_id: selected.omdb_id, title: selected.title, poster_url: selected.poster_url, release_year: selected.release_year, genres: selected.genres, runtime_minutes: selected.runtime_minutes, overview: selected.overview, director: selected.director, group_status: groupStatus, added_by: userId };
+      payload = { omdb_id: selected.omdb_id, title: selected.title, poster_url: selected.poster_url, release_year: selected.release_year, genres: selected.genres, runtime_minutes: selected.runtime_minutes, overview: selected.overview, director: selected.director, added_by: userId };
     } else {
       const title = manual.title.trim();
       if (!title) { setError("Title is required."); setSaving(false); return; }
-      payload = { title, release_year: manual.release_year ? parseInt(manual.release_year) : null, genres: manual.genres ? manual.genres.split(",").map(s => s.trim()).filter(Boolean) : [], runtime_minutes: manual.runtime ? parseInt(manual.runtime) : null, overview: manual.overview.trim() || null, director: manual.director.trim() || null, group_status: groupStatus, added_by: userId };
+      payload = { title, release_year: manual.release_year ? parseInt(manual.release_year) : null, genres: manual.genres ? manual.genres.split(",").map(s => s.trim()).filter(Boolean) : [], runtime_minutes: manual.runtime ? parseInt(manual.runtime) : null, overview: manual.overview.trim() || null, director: manual.director.trim() || null, added_by: userId };
     }
 
     const { error: err } = await supabase.from("movies").insert(payload);
@@ -221,22 +218,6 @@ export function AddMovieModal({ userId, onClose, onAdded }: Props) {
 
           {/* Footer */}
           <div className="px-6 pt-4 pb-6 flex-shrink-0 space-y-4 border-t" style={{ borderColor: "var(--color-border)" }}>
-            <div>
-              <label className="block text-xs font-medium mb-2" style={{ color: "var(--color-text-secondary)" }}>Group Status</label>
-              <div className="flex gap-2 flex-wrap">
-                {STATUS_OPTIONS.map(s => {
-                  const meta = GROUP_MOVIE_STATUS_META[s];
-                  const active = groupStatus === s;
-                  return (
-                    <button key={s} onClick={() => setGroupStatus(s)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border"
-                      style={{ backgroundColor: active ? meta.bg : "transparent", borderColor: active ? meta.color : "var(--color-border)", color: active ? meta.color : "var(--color-text-muted)" }}>
-                      {meta.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
             {error && <p className="text-xs" style={{ color: "var(--color-red)" }}>{error}</p>}
             <div className="flex gap-3">
               <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border text-sm font-medium hover:bg-white/5"

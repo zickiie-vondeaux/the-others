@@ -3,24 +3,45 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
-import {
-  GROUP_MOVIE_STATUS_META, PERSONAL_MOVIE_STATUS_META,
-  type Movie, type GroupMovieStatus, type PersonalMovieStatus, type Profile,
-} from "@/lib/supabase/types";
-import { X, Film, Users, Star, CalendarPlus, Trash2, Loader2, Clock } from "lucide-react";
+import { type Movie, type MovieReview, type Profile } from "@/lib/supabase/types";
+import { X, Film, Users, CalendarPlus, Trash2, Loader2, Star, Clock } from "lucide-react";
 import { logActivity } from "@/lib/activity";
 import { useAchievements } from "@/components/achievements/AchievementProvider";
 
-interface MemberStatus {
+export interface MovieReviewWithProfile {
+  review: MovieReview;
   profile: Pick<Profile, "id" | "display_name" | "avatar_url" | "username">;
-  status: PersonalMovieStatus;
 }
+
+function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [hover, setHover] = useState(0);
+  const active = hover || value;
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map(s => (
+        <button key={s}
+          onClick={() => onChange(value === s ? 0 : s)}
+          onMouseEnter={() => setHover(s)}
+          onMouseLeave={() => setHover(0)}
+          className="transition-transform hover:scale-110"
+          aria-label={`Rate ${s} star${s !== 1 ? "s" : ""}`}>
+          <Star size={30}
+            fill={s <= active ? "currentColor" : "none"}
+            style={{ color: s <= active ? "var(--color-gold)" : "var(--color-border)" }}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const RATING_LABELS = ["", "Terrible", "Bad", "Okay", "Good", "Amazing"];
 
 interface Props {
   movie: Movie;
   myUserId: string;
-  myStatus: PersonalMovieStatus | null;
-  memberStatuses: MemberStatus[];
+  myReview: MovieReview | null;
+  memberReviews: MovieReviewWithProfile[];
   totalMembers: number;
   isAdmin: boolean;
   onClose: () => void;
@@ -28,50 +49,46 @@ interface Props {
   onDelete?: () => void;
 }
 
-const GROUP_OPTIONS: GroupMovieStatus[] = ["queue", "watching", "watched", "dropped"];
-const PERSONAL_OPTIONS: PersonalMovieStatus[] = ["watched", "watching", "want_to_watch", "not_interested"];
-
-export function MovieDetailModal({ movie, myUserId, myStatus, memberStatuses, totalMembers, isAdmin, onClose, onUpdated, onDelete }: Props) {
+export function MovieDetailModal({
+  movie, myUserId, myReview, memberReviews, totalMembers, isAdmin,
+  onClose, onUpdated, onDelete,
+}: Props) {
   const { triggerCheck } = useAchievements();
-  const [groupStatus, setGroupStatus] = useState<GroupMovieStatus>(movie.group_status);
-  const [personalStatus, setPersonalStatus] = useState<PersonalMovieStatus | null>(myStatus);
+  const [rating, setRating] = useState<number>(myReview?.rating ?? 0);
+  const [reviewText, setReviewText] = useState(myReview?.review_text ?? "");
   const [saving, setSaving] = useState(false);
-  const [showScheduler, setShowScheduler] = useState(false);
-  const [scheduleDate, setScheduleDate] = useState(() => { const d = new Date(); d.setDate(d.getDate() + 7); return d.toISOString().split("T")[0]; });
-  const [scheduleTime, setScheduleTime] = useState("20:00");
-  const [scheduling, setScheduling] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [scheduling, setScheduling] = useState(false);
+  const [showScheduler, setShowScheduler] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() + 7);
+    return d.toISOString().split("T")[0];
+  });
+  const [scheduleTime, setScheduleTime] = useState("20:00");
 
-  const watchedCount = memberStatuses.filter(m => m.status === "watched").length;
-  const wantCount = memberStatuses.filter(m => m.status === "want_to_watch").length;
-  const membersWatched = memberStatuses.filter(m => m.status === "watched");
-  const membersWatching = memberStatuses.filter(m => m.status === "watching");
-  const membersWant = memberStatuses.filter(m => m.status === "want_to_watch");
+  const isDirty = rating !== (myReview?.rating ?? 0) || reviewText !== (myReview?.review_text ?? "");
 
-  async function updateGroupStatus(s: GroupMovieStatus) {
-    if (s === groupStatus) return;
-    setGroupStatus(s);
-    await createClient().from("movies").update({ group_status: s }).eq("id", movie.id);
+  async function saveReview() {
+    if (rating === 0) return;
+    setSaving(true);
+    const isNew = !myReview;
+    await createClient().from("movie_reviews").upsert({
+      user_id: myUserId, movie_id: movie.id,
+      rating, review_text: reviewText.trim() || null,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id,movie_id" });
+    if (isNew) {
+      logActivity({ type: "movie_watched", entityType: "movie", entityId: movie.id, entityTitle: movie.title });
+      triggerCheck();
+    }
+    setSaving(false);
     onUpdated();
   }
 
-  async function updatePersonalStatus(s: PersonalMovieStatus | null) {
+  async function removeReview() {
     setSaving(true);
-    const supabase = createClient();
-    if (s === null || s === personalStatus) {
-      await supabase.from("user_movie_status").delete().eq("user_id", myUserId).eq("movie_id", movie.id);
-      setPersonalStatus(null);
-    } else {
-      await supabase.from("user_movie_status").upsert({
-        user_id: myUserId, movie_id: movie.id, status: s,
-        watched_at: s === "watched" ? new Date().toISOString().split("T")[0] : null,
-      }, { onConflict: "user_id,movie_id" });
-      if (s === "watched") {
-        logActivity({ type: "movie_watched", entityType: "movie", entityId: movie.id, entityTitle: movie.title });
-        triggerCheck();
-      }
-      setPersonalStatus(s);
-    }
+    await createClient().from("movie_reviews").delete().eq("user_id", myUserId).eq("movie_id", movie.id);
+    setRating(0); setReviewText("");
     setSaving(false);
     onUpdated();
   }
@@ -83,21 +100,23 @@ export function MovieDetailModal({ movie, myUserId, myStatus, memberStatuses, to
       title: `Movie Night: ${movie.title}`, type: "movie_night", start_at,
       description: `Watching ${movie.title} together`, created_by: myUserId,
     });
-    setScheduling(false);
-    setShowScheduler(false);
-    onUpdated();
+    setScheduling(false); setShowScheduler(false);
     window.location.href = "/calendar";
   }
 
   async function deleteMovie() {
     setDeleting(true);
     const supabase = createClient();
-    await supabase.from("user_movie_status").delete().eq("movie_id", movie.id);
+    await supabase.from("movie_reviews").delete().eq("movie_id", movie.id);
     await supabase.from("poll_options").delete().eq("movie_id", movie.id);
     await supabase.from("movies").delete().eq("id", movie.id);
     setDeleting(false);
     onDelete?.(); onClose();
   }
+
+  const avgRating = memberReviews.length > 0
+    ? memberReviews.reduce((s, r) => s + r.review.rating, 0) / memberReviews.length
+    : null;
 
   return (
     <AnimatePresence>
@@ -117,7 +136,10 @@ export function MovieDetailModal({ movie, myUserId, myStatus, memberStatuses, to
             <div className="flex gap-5 p-6 pb-4">
               {movie.poster_url
                 ? <img src={movie.poster_url} alt={movie.title} loading="lazy" className="w-24 rounded-xl flex-shrink-0 shadow-lg object-cover" style={{ height: "144px" }} />
-                : <div className="w-24 rounded-xl flex-shrink-0 flex items-center justify-center shadow-lg" style={{ backgroundColor: "var(--color-surface)", height: "144px" }}><Film size={28} style={{ color: "var(--color-text-muted)" }} /></div>}
+                : <div className="w-24 rounded-xl flex-shrink-0 flex items-center justify-center shadow-lg" style={{ backgroundColor: "var(--color-surface)", height: "144px" }}>
+                    <Film size={28} style={{ color: "var(--color-text-muted)" }} />
+                  </div>
+              }
               <div className="flex-1 min-w-0 pt-1">
                 <h2 className="text-xl font-bold leading-tight" style={{ color: "var(--color-text-primary)" }}>{movie.title}</h2>
                 <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
@@ -129,15 +151,24 @@ export function MovieDetailModal({ movie, myUserId, myStatus, memberStatuses, to
                     <Clock size={10} /> {movie.runtime_minutes} min
                   </p>
                 )}
-                <div className="flex flex-wrap gap-2 mt-2">
-                  <span className="text-xs px-2 py-0.5 rounded-full font-medium"
-                    style={{ backgroundColor: GROUP_MOVIE_STATUS_META[groupStatus].bg, color: GROUP_MOVIE_STATUS_META[groupStatus].color }}>
-                    {GROUP_MOVIE_STATUS_META[groupStatus].label}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 mt-3 text-xs" style={{ color: "var(--color-text-muted)" }}>
-                  <span className="flex items-center gap-1"><Users size={11} /> {watchedCount}/{totalMembers} watched</span>
-                  {wantCount > 0 && <span className="flex items-center gap-1" style={{ color: "var(--color-gold)" }}><Star size={11} /> {wantCount} want it</span>}
+                <div className="flex items-center gap-2 mt-3">
+                  {avgRating !== null ? (
+                    <>
+                      <span className="flex gap-0.5">
+                        {[1,2,3,4,5].map(s => (
+                          <Star key={s} size={13} fill={s <= Math.round(avgRating) ? "currentColor" : "none"}
+                            style={{ color: s <= Math.round(avgRating) ? "var(--color-gold)" : "var(--color-border)" }} />
+                        ))}
+                      </span>
+                      <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                        {avgRating.toFixed(1)} · {memberReviews.length}/{totalMembers} rated
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-xs flex items-center gap-1" style={{ color: "var(--color-text-muted)" }}>
+                      <Users size={11} /> {memberReviews.length}/{totalMembers} rated
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -149,48 +180,68 @@ export function MovieDetailModal({ movie, myUserId, myStatus, memberStatuses, to
             )}
 
             <div className="px-6 space-y-5 pb-6">
-              {/* Group status */}
+              {/* My Rating */}
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-text-muted)" }}>Group Status</p>
-                <div className="flex flex-wrap gap-2">
-                  {GROUP_OPTIONS.map(s => {
-                    const meta = GROUP_MOVIE_STATUS_META[s]; const active = groupStatus === s;
-                    return (
-                      <button key={s} onClick={() => updateGroupStatus(s)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border"
-                        style={{ backgroundColor: active ? meta.bg : "transparent", borderColor: active ? meta.color : "var(--color-border)", color: active ? meta.color : "var(--color-text-muted)" }}>
-                        {meta.label}
-                      </button>
-                    );
-                  })}
+                <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--color-text-muted)" }}>My Rating</p>
+                <StarPicker value={rating} onChange={setRating} />
+                {rating > 0 && (
+                  <p className="text-xs mt-1.5" style={{ color: "var(--color-gold)" }}>{RATING_LABELS[rating]}</p>
+                )}
+                <textarea
+                  value={reviewText}
+                  onChange={e => setReviewText(e.target.value)}
+                  placeholder={rating > 0 ? "Add a review (optional)..." : "Rate first, then write a review..."}
+                  disabled={rating === 0}
+                  rows={2} maxLength={500}
+                  className="w-full mt-3 px-3 py-2.5 rounded-xl border text-sm outline-none resize-none transition-colors focus:border-cyan-500/60 disabled:opacity-40"
+                  style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-text-primary)" }}
+                />
+                <div className="flex items-center gap-2 mt-2">
+                  {isDirty && rating > 0 && (
+                    <button onClick={saveReview} disabled={saving}
+                      className="px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                      style={{ backgroundColor: "var(--color-cyan)", color: "#000" }}>
+                      {saving && <Loader2 size={12} className="animate-spin" />}
+                      {myReview ? "Update" : "Save"} Review
+                    </button>
+                  )}
+                  {myReview && (
+                    <button onClick={removeReview} disabled={saving} className="px-3 py-1.5 rounded-lg text-xs transition-colors" style={{ color: "var(--color-text-muted)" }}>
+                      Remove
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {/* Personal status */}
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-text-muted)" }}>My Status</p>
-                <div className="flex flex-wrap gap-2">
-                  {PERSONAL_OPTIONS.map(s => {
-                    const meta = PERSONAL_MOVIE_STATUS_META[s]; const active = personalStatus === s;
-                    return (
-                      <button key={s} onClick={() => updatePersonalStatus(active ? null : s)} disabled={saving}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border flex items-center gap-1.5 disabled:opacity-60"
-                        style={{ backgroundColor: active ? "rgba(6,182,212,0.12)" : "transparent", borderColor: active ? "var(--color-cyan)" : "var(--color-border)", color: active ? "var(--color-cyan-light)" : "var(--color-text-muted)" }}>
-                        <span>{meta.icon}</span> {meta.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Member breakdown */}
-              {(membersWatched.length > 0 || membersWatching.length > 0 || membersWant.length > 0) && (
+              {/* Member reviews */}
+              {memberReviews.length > 0 && (
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "var(--color-text-muted)" }}>The Others</p>
-                  <div className="space-y-2">
-                    {membersWatched.length > 0 && <MemberRow label="Watched" icon="✅" members={membersWatched} color="var(--color-green)" />}
-                    {membersWatching.length > 0 && <MemberRow label="Watching" icon="👀" members={membersWatching} color="var(--color-cyan)" />}
-                    {membersWant.length > 0 && <MemberRow label="Want to watch" icon="⭐" members={membersWant} color="var(--color-gold)" />}
+                  <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--color-text-muted)" }}>The Others</p>
+                  <div className="space-y-3">
+                    {memberReviews.map(({ review, profile }) => (
+                      <div key={review.id} className="flex gap-3">
+                        <div className="w-7 h-7 rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center" style={{ backgroundColor: "rgba(6,182,212,0.2)" }}>
+                          {profile.avatar_url
+                            ? <img src={profile.avatar_url} alt={profile.display_name} className="w-full h-full object-cover" />
+                            : <span className="text-xs font-bold" style={{ color: "var(--color-cyan)" }}>{profile.display_name[0]}</span>
+                          }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>{profile.display_name}</span>
+                            <span className="flex gap-0.5">
+                              {[1,2,3,4,5].map(s => (
+                                <Star key={s} size={10} fill={s <= review.rating ? "currentColor" : "none"}
+                                  style={{ color: s <= review.rating ? "var(--color-gold)" : "var(--color-border)" }} />
+                              ))}
+                            </span>
+                          </div>
+                          {review.review_text && (
+                            <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--color-text-muted)" }}>{review.review_text}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -211,11 +262,11 @@ export function MovieDetailModal({ movie, myUserId, myStatus, memberStatuses, to
                         <div className="flex gap-3">
                           <div className="flex-1">
                             <label className="block text-xs mb-1.5" style={{ color: "var(--color-text-secondary)" }}>Date</label>
-                            <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="w-full px-3 py-2 rounded-xl border text-sm outline-none" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-text-primary)" }} />
+                            <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="w-full px-3 py-2 rounded-xl border text-sm outline-none" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-text-primary)", colorScheme: "dark" }} />
                           </div>
                           <div className="w-32">
                             <label className="block text-xs mb-1.5" style={{ color: "var(--color-text-secondary)" }}>Time</label>
-                            <input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-full px-3 py-2 rounded-xl border text-sm outline-none" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-text-primary)" }} />
+                            <input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-full px-3 py-2 rounded-xl border text-sm outline-none" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", color: "var(--color-text-primary)", colorScheme: "dark" }} />
                           </div>
                         </div>
                         <button onClick={scheduleWatchParty} disabled={scheduling}
@@ -240,22 +291,5 @@ export function MovieDetailModal({ movie, myUserId, myStatus, memberStatuses, to
         </motion.div>
       </div>
     </AnimatePresence>
-  );
-}
-
-function MemberRow({ label, icon, members, color }: { label: string; icon: string; members: MemberStatus[]; color?: string }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="text-xs w-28 flex-shrink-0 flex items-center gap-1.5" style={{ color: color ?? "var(--color-text-secondary)" }}>
-        {icon} {label}
-      </span>
-      <div className="flex flex-wrap gap-1.5">
-        {members.map(m => (
-          <span key={m.profile.id} className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "var(--color-surface)", color: "var(--color-text-secondary)" }}>
-            {m.profile.display_name}
-          </span>
-        ))}
-      </div>
-    </div>
   );
 }

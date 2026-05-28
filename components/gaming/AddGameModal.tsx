@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
-import { GROUP_STATUS_META, type GroupGameStatus } from "@/lib/supabase/types";
 import type { NormalizedGame } from "@/lib/rawg";
 import { Search, X, Gamepad2, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
@@ -18,8 +17,6 @@ interface Props {
 
 type Tab = "search" | "manual";
 
-const STATUS_OPTIONS: GroupGameStatus[] = ["queue", "playing", "completed", "dropped"];
-
 export function AddGameModal({ userId, onClose, onAdded }: Props) {
   const { triggerCheck } = useAchievements();
   const [tab, setTab] = useState<Tab>("search");
@@ -27,7 +24,6 @@ export function AddGameModal({ userId, onClose, onAdded }: Props) {
   const [results, setResults] = useState<NormalizedGame[]>([]);
   const [searching, setSearching] = useState(false);
   const [selected, setSelected] = useState<NormalizedGame | null>(null);
-  const [groupStatus, setGroupStatus] = useState<GroupGameStatus>("queue");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -84,7 +80,6 @@ export function AddGameModal({ userId, onClose, onAdded }: Props) {
         platforms: selected.platforms,
         is_multiplayer: selected.is_multiplayer,
         summary: selected.summary,
-        group_status: groupStatus,
         added_by: userId,
       };
     } else {
@@ -97,7 +92,6 @@ export function AddGameModal({ userId, onClose, onAdded }: Props) {
         platforms: manual.platforms ? manual.platforms.split(",").map(s => s.trim()).filter(Boolean) : [],
         is_multiplayer: manual.is_multiplayer,
         summary: manual.summary.trim() || null,
-        group_status: groupStatus,
         added_by: userId,
       };
     }
@@ -331,33 +325,6 @@ export function AddGameModal({ userId, onClose, onAdded }: Props) {
 
           {/* Footer */}
           <div className="px-6 pt-4 pb-6 flex-shrink-0 space-y-4 border-t" style={{ borderColor: "var(--color-border)" }}>
-            {/* Group status selector */}
-            <div>
-              <label className="block text-xs font-medium mb-2" style={{ color: "var(--color-text-secondary)" }}>
-                Group Status
-              </label>
-              <div className="flex gap-2 flex-wrap">
-                {STATUS_OPTIONS.map(s => {
-                  const meta = GROUP_STATUS_META[s];
-                  const active = groupStatus === s;
-                  return (
-                    <button
-                      key={s}
-                      onClick={() => setGroupStatus(s)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border"
-                      style={{
-                        backgroundColor: active ? meta.bg : "transparent",
-                        borderColor: active ? meta.color : "var(--color-border)",
-                        color: active ? meta.color : "var(--color-text-muted)",
-                      }}
-                    >
-                      {meta.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
             {error && <p className="text-xs" style={{ color: "var(--color-red)" }}>{error}</p>}
 
             <div className="flex gap-3">

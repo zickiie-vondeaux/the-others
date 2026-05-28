@@ -17,6 +17,7 @@ export interface Profile {
   favorite_color: string | null;
   favorite_music: string | null;
   platforms: string[];
+  steam_id: string | null;
   role: Role;
   onboarding_complete: boolean;
   created_at: string;
@@ -34,6 +35,7 @@ export type PersonalGameStatus = "playing_solo" | "playing_multiplayer" | "compl
 export interface Game {
   id: string;
   igdb_id: number | null;
+  steam_app_id: number | null;
   title: string;
   cover_url: string | null;
   release_year: number | null;
@@ -137,6 +139,28 @@ export const PERSONAL_MOVIE_STATUS_META: Record<PersonalMovieStatus, { label: st
   want_to_watch:  { label: "Want to watch",  icon: "⭐" },
   not_interested: { label: "Not interested", icon: "👻" },
 };
+
+// ── Reviews ────────────────────────────────────────────────────
+
+export interface GameReview {
+  id: string;
+  user_id: string;
+  game_id: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  review_text: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MovieReview {
+  id: string;
+  user_id: string;
+  movie_id: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  review_text: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 // ─── Personality ──────────────────────────────────────────────────────────────
 

@@ -4,43 +4,41 @@ import { useState, useEffect, useCallback } from "react";
 import { TopBar } from "@/components/layout/TopBar";
 import { MovieCard } from "@/components/movies/MovieCard";
 import { AddMovieModal } from "@/components/movies/AddMovieModal";
-import { MovieDetailModal } from "@/components/movies/MovieDetailModal";
+import { MovieDetailModal, type MovieReviewWithProfile } from "@/components/movies/MovieDetailModal";
 import { CreatePollModal, PollDetailModal } from "@/components/movies/PollModal";
 import { createClient } from "@/lib/supabase/client";
 import {
-  GROUP_MOVIE_STATUS_META,
-  type Movie, type GroupMovieStatus, type PersonalMovieStatus,
+  type Movie, type MovieReview,
   type Profile, type Poll, type PollOption, type PollVote,
 } from "@/lib/supabase/types";
-import { Plus, LayoutGrid, List, Filter, Film, Vote, Clock } from "lucide-react";
+import { Plus, LayoutGrid, List, Filter, Film, Vote, Clock, Star } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { formatDistanceToNow } from "date-fns";
 import { GridSkeleton } from "@/components/ui/Skeleton";
 
-type Tab = "all" | GroupMovieStatus;
+type Tab = "all" | "rated" | "unrated";
 type ViewMode = "grid" | "list";
 
-interface UserMovieRow { user_id: string; movie_id: string; status: PersonalMovieStatus; }
-interface MemberStatus {
-  profile: Pick<Profile, "id" | "display_name" | "avatar_url" | "username">;
-  status: PersonalMovieStatus;
+interface MovieReviewRow {
+  id: string; user_id: string; movie_id: string;
+  rating: number; review_text: string | null;
+  created_at: string; updated_at: string;
 }
+
 interface PollWithData extends Poll {
   options: (PollOption & { movie: Movie | null })[];
   votes: PollVote[];
 }
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "all",      label: "All" },
-  { id: "queue",    label: "Watch Queue" },
-  { id: "watching", label: "Watching" },
-  { id: "watched",  label: "Watched" },
-  { id: "dropped",  label: "Did Not Finish" },
+  { id: "all",     label: "All" },
+  { id: "rated",   label: "Rated" },
+  { id: "unrated", label: "Unrated" },
 ];
 
 export default function MoviesPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
-  const [allStatuses, setAllStatuses] = useState<UserMovieRow[]>([]);
+  const [allReviews, setAllReviews] = useState<MovieReviewRow[]>([]);
   const [profiles, setProfiles] = useState<Pick<Profile, "id" | "display_name" | "avatar_url" | "username">[]>([]);
   const [polls, setPolls] = useState<PollWithData[]>([]);
   const [myUserId, setMyUserId] = useState("");
@@ -69,7 +67,7 @@ export default function MoviesPage() {
     ] = await Promise.all([
       supabase.auth.getUser(),
       supabase.from("movies").select("*").order("created_at", { ascending: false }),
-      supabase.from("user_movie_status").select("user_id,movie_id,status"),
+      supabase.from("movie_reviews").select("*"),
       supabase.from("profiles").select("id,display_name,avatar_url,username,role"),
       supabase.from("polls").select("*").order("created_at", { ascending: false }),
       supabase.from("poll_options").select("*"),
@@ -84,7 +82,7 @@ export default function MoviesPage() {
 
     const movieList = (moviesData ?? []) as Movie[];
     setMovies(movieList);
-    setAllStatuses((statusData ?? []) as UserMovieRow[]);
+    setAllReviews((statusData ?? []) as MovieReviewRow[]);
     setProfiles((profilesData ?? []) as Pick<Profile, "id" | "display_name" | "avatar_url" | "username">[]);
 
     // Build polls with nested options + votes
@@ -104,47 +102,54 @@ export default function MoviesPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  function myStatusForMovie(movieId: string): PersonalMovieStatus | null {
-    return allStatuses.find(r => r.user_id === myUserId && r.movie_id === movieId)?.status ?? null;
+  function myReviewForMovie(movieId: string): MovieReview | null {
+    const r = allReviews.find(r => r.user_id === myUserId && r.movie_id === movieId);
+    return r ? (r as MovieReview) : null;
   }
 
-  function memberStatusesForMovie(movieId: string): MemberStatus[] {
-    return allStatuses
-      .filter(r => r.movie_id === movieId && r.status !== "not_interested")
+  function memberReviewsForMovie(movieId: string): MovieReviewWithProfile[] {
+    return allReviews
+      .filter(r => r.movie_id === movieId)
       .map(r => ({
+        review: r as MovieReview,
         profile: profiles.find(p => p.id === r.user_id) ?? { id: r.user_id, display_name: "Member", avatar_url: null, username: "" },
-        status: r.status,
       }));
   }
 
-  function watchedCount(movieId: string) { return allStatuses.filter(r => r.movie_id === movieId && r.status === "watched").length; }
-  function wantCount(movieId: string) { return allStatuses.filter(r => r.movie_id === movieId && r.status === "want_to_watch").length; }
+  function avgRatingForMovie(movieId: string): number | null {
+    const reviews = allReviews.filter(r => r.movie_id === movieId);
+    if (reviews.length === 0) return null;
+    return reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+  }
+
+  function ratingCountForMovie(movieId: string): number {
+    return allReviews.filter(r => r.movie_id === movieId).length;
+  }
 
   async function deleteMovie(movieId: string) {
     const supabase = createClient();
-    await supabase.from("user_movie_status").delete().eq("movie_id", movieId);
+    await supabase.from("movie_reviews").delete().eq("movie_id", movieId);
     await supabase.from("poll_options").delete().eq("movie_id", movieId);
     await supabase.from("movies").delete().eq("id", movieId);
     fetchData();
   }
 
   const allGenres = Array.from(new Set(movies.flatMap(m => m.genres))).sort();
-  const queueMovies = movies.filter(m => m.group_status === "queue");
   const activePolls = polls.filter(p => !p.is_closed);
   const closedPolls = polls.filter(p => p.is_closed);
 
   const filteredMovies = movies.filter(m => {
-    if (tab !== "all" && m.group_status !== tab) return false;
+    const hasRatings = ratingCountForMovie(m.id) > 0;
+    if (tab === "rated" && !hasRatings) return false;
+    if (tab === "unrated" && hasRatings) return false;
     if (genreFilter !== "all" && !m.genres.includes(genreFilter)) return false;
     return true;
   });
 
-  const tabCounts: Partial<Record<Tab, number>> = {
-    all: movies.length,
-    queue: movies.filter(m => m.group_status === "queue").length,
-    watching: movies.filter(m => m.group_status === "watching").length,
-    watched: movies.filter(m => m.group_status === "watched").length,
-    dropped: movies.filter(m => m.group_status === "dropped").length,
+  const tabCounts: Record<Tab, number> = {
+    all:     movies.length,
+    rated:   movies.filter(m => ratingCountForMovie(m.id) > 0).length,
+    unrated: movies.filter(m => ratingCountForMovie(m.id) === 0).length,
   };
 
   return (
@@ -213,12 +218,13 @@ export default function MoviesPage() {
           {/* Tabs */}
           <div className="flex gap-1 overflow-x-auto pb-1">
             {TABS.map(t => {
-              const count = tabCounts[t.id] ?? 0;
+              const count = tabCounts[t.id];
               const active = tab === t.id;
               return (
                 <button key={t.id} onClick={() => setTab(t.id)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0"
                   style={active ? { backgroundColor: "var(--color-cyan)", color: "#000" } : { color: "var(--color-text-secondary)" }}>
+                  {t.id === "rated" && <Star size={12} fill="currentColor" />}
                   {t.label}
                   {count > 0 && (
                     <span className="text-xs px-1.5 py-0.5 rounded-full font-mono"
@@ -274,18 +280,23 @@ export default function MoviesPage() {
           ) : viewMode === "grid" ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {filteredMovies.map(movie => (
-                <MovieCard key={movie.id} movie={movie} myStatus={myStatusForMovie(movie.id)}
-                  watchedCount={watchedCount(movie.id)} wantCount={wantCount(movie.id)}
-                  totalMembers={profiles.length} onClick={() => setSelectedMovie(movie)}
+                <MovieCard key={movie.id} movie={movie}
+                  myRating={myReviewForMovie(movie.id)?.rating ?? null}
+                  avgRating={avgRatingForMovie(movie.id)}
+                  ratingCount={ratingCountForMovie(movie.id)}
+                  onClick={() => setSelectedMovie(movie)}
                   onDelete={() => deleteMovie(movie.id)} />
               ))}
             </div>
           ) : (
             <div className="space-y-2">
               {filteredMovies.map(movie => (
-                <ListRow key={movie.id} movie={movie} myStatus={myStatusForMovie(movie.id)}
-                  watchedCount={watchedCount(movie.id)} wantCount={wantCount(movie.id)}
-                  totalMembers={profiles.length} onClick={() => setSelectedMovie(movie)} />
+                <ListRow key={movie.id} movie={movie}
+                  myRating={myReviewForMovie(movie.id)?.rating ?? null}
+                  avgRating={avgRatingForMovie(movie.id)}
+                  ratingCount={ratingCountForMovie(movie.id)}
+                  totalMembers={profiles.length}
+                  onClick={() => setSelectedMovie(movie)} />
               ))}
             </div>
           )}
@@ -319,18 +330,20 @@ export default function MoviesPage() {
 
       {showAddModal && <AddMovieModal userId={myUserId} onClose={() => setShowAddModal(false)} onAdded={fetchData} />}
       {selectedMovie && (
-        <MovieDetailModal movie={selectedMovie} myUserId={myUserId} myStatus={myStatusForMovie(selectedMovie.id)}
-          memberStatuses={memberStatusesForMovie(selectedMovie.id)} totalMembers={profiles.length}
+        <MovieDetailModal movie={selectedMovie} myUserId={myUserId}
+          myReview={myReviewForMovie(selectedMovie.id)}
+          memberReviews={memberReviewsForMovie(selectedMovie.id)}
+          totalMembers={profiles.length}
           isAdmin={myRole === "super_admin" || myRole === "moderator"}
           onClose={() => setSelectedMovie(null)} onUpdated={() => { fetchData(); }}
           onDelete={() => { setSelectedMovie(null); fetchData(); }} />
       )}
       {showCreatePoll && (
-        <CreatePollModal myUserId={myUserId} queueMovies={queueMovies}
+        <CreatePollModal myUserId={myUserId} queueMovies={movies}
           onClose={() => setShowCreatePoll(false)} onCreated={fetchData} />
       )}
       {selectedPoll && (
-        <PollDetailModal poll={selectedPoll} myUserId={myUserId} queueMovies={queueMovies}
+        <PollDetailModal poll={selectedPoll} myUserId={myUserId} queueMovies={movies}
           onClose={() => setSelectedPoll(null)} onUpdated={() => { fetchData(); setSelectedPoll(null); }} />
       )}
     </>
@@ -338,12 +351,10 @@ export default function MoviesPage() {
 }
 
 function EmptyState({ tab, onAdd }: { tab: Tab; onAdd: () => void }) {
-  const messages: Partial<Record<Tab, string>> = {
-    all: "No movies yet. Add the first one!",
-    queue: "Nothing in the watch queue.",
-    watching: "Not watching anything currently.",
-    watched: "No movies watched together yet.",
-    dropped: "Nothing dropped. Great taste!",
+  const messages: Record<Tab, string> = {
+    all:     "No movies yet. Add the first one!",
+    rated:   "No movies have been rated yet. Open a movie and leave a review!",
+    unrated: "Every movie has been rated — impressive!",
   };
   return (
     <div className="py-20 flex flex-col items-center gap-4">
@@ -361,11 +372,10 @@ function EmptyState({ tab, onAdd }: { tab: Tab; onAdd: () => void }) {
   );
 }
 
-function ListRow({ movie, myStatus, watchedCount, wantCount, totalMembers, onClick }: {
-  movie: Movie; myStatus: PersonalMovieStatus | null;
-  watchedCount: number; wantCount: number; totalMembers: number; onClick: () => void;
+function ListRow({ movie, myRating, avgRating, ratingCount, totalMembers, onClick }: {
+  movie: Movie; myRating: number | null;
+  avgRating: number | null; ratingCount: number; totalMembers: number; onClick: () => void;
 }) {
-  const meta = GROUP_MOVIE_STATUS_META[movie.group_status];
   return (
     <button onClick={onClick} className="w-full flex items-center gap-4 p-3 rounded-xl border text-left hover:bg-white/5 transition-colors"
       style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
@@ -379,11 +389,20 @@ function ListRow({ movie, myStatus, watchedCount, wantCount, totalMembers, onCli
         </p>
       </div>
       <div className="flex items-center gap-3 flex-shrink-0">
-        <span className="text-xs px-2 py-0.5 rounded-full hidden sm:inline-block" style={{ backgroundColor: meta.bg, color: meta.color }}>{meta.label}</span>
-        <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>{watchedCount}/{totalMembers}</span>
-        {wantCount > 0 && <span className="text-xs" style={{ color: "var(--color-gold)" }}>⭐ {wantCount}</span>}
-        {myStatus && myStatus !== "not_interested" && (
-          <span className="text-sm">{myStatus === "watched" ? "✅" : myStatus === "watching" ? "👀" : myStatus === "want_to_watch" ? "⭐" : ""}</span>
+        {avgRating !== null ? (
+          <span className="flex items-center gap-1 text-xs" style={{ color: "var(--color-gold)" }}>
+            <Star size={11} fill="currentColor" />
+            {avgRating.toFixed(1)}
+            <span style={{ color: "var(--color-text-muted)" }}>({ratingCount}/{totalMembers})</span>
+          </span>
+        ) : (
+          <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>No ratings</span>
+        )}
+        {myRating !== null && (
+          <span className="text-xs font-bold px-1.5 py-0.5 rounded-full"
+            style={{ backgroundColor: "rgba(251,191,36,0.2)", color: "var(--color-gold)" }}>
+            ★{myRating}
+          </span>
         )}
       </div>
     </button>
