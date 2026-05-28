@@ -37,29 +37,37 @@ export async function DELETE(req: NextRequest) {
   const gameId = req.nextUrl.searchParams.get("id");
   if (!gameId) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  console.log("[DELETE /api/games] gameId:", gameId, "userId:", user.id, "hasServiceKey:", !!serviceKey);
+
   // Use admin client for all DB ops to bypass RLS
   const admin = createAdminClient();
 
-  const [{ data: game }, { data: profile }] = await Promise.all([
+  const [{ data: game, error: gameErr }, { data: profile, error: profileErr }] = await Promise.all([
     admin.from("games").select("added_by").eq("id", gameId).single(),
     admin.from("profiles").select("role").eq("id", user.id).single(),
   ]);
 
-  if (!game) return NextResponse.json({ error: "Game not found" }, { status: 404 });
+  console.log("[DELETE /api/games] game:", game, "gameErr:", gameErr, "profile:", profile, "profileErr:", profileErr);
+
+  if (!game) return NextResponse.json({ error: "Game not found", detail: gameErr?.message }, { status: 404 });
 
   const canDelete =
     profile?.role === "super_admin" ||
     profile?.role === "moderator" ||
     game.added_by === user.id;
 
+  console.log("[DELETE /api/games] canDelete:", canDelete, "role:", profile?.role, "added_by:", game.added_by);
+
   if (!canDelete) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  await admin.from("game_reviews").delete().eq("game_id", gameId);
-  const { error } = await admin.from("games").delete().eq("id", gameId);
+  const { error: reviewsErr } = await admin.from("game_reviews").delete().eq("game_id", gameId);
+  const { error: deleteErr } = await admin.from("games").delete().eq("id", gameId);
 
-  if (error) {
-    console.error("Game delete error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  console.log("[DELETE /api/games] reviewsErr:", reviewsErr, "deleteErr:", deleteErr);
+
+  if (deleteErr) {
+    return NextResponse.json({ error: deleteErr.message }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });
