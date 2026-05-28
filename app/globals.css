@@ -221,7 +221,7 @@ img[loading="lazy"].loaded {
 
 .neon-heading {
   color: #00ffea;
-  text-shadow: 0 0 18px rgba(0, 255, 234, 0.45);
+  text-shadow: 0 0 6px #00ffea, 0 0 20px rgba(0, 255, 234, 0.8), 0 0 48px rgba(0, 255, 234, 0.4);
   letter-spacing: 0.02em;
 }
 

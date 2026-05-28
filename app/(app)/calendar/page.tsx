@@ -118,7 +118,7 @@ export default function CalendarPage() {
           {/* Page header */}
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h1 className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>Calendar</h1>
+              <h1 className="neon-heading text-4xl font-black uppercase tracking-widest">Calendar</h1>
               <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
                 Birthdays, game nights, and everything in between
               </p>

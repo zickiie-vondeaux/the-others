@@ -154,7 +154,7 @@ export default function PersonalityPage() {
 
           {/* Header */}
           <div>
-            <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--color-text-primary)" }}>
+            <h1 className="neon-heading text-4xl font-black mb-1 uppercase tracking-widest">
               Personality Corner
             </h1>
             <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>

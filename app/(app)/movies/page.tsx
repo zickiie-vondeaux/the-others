@@ -148,7 +148,7 @@ export default function MoviesPage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>Movie Library</h1>
+              <h1 className="neon-heading text-4xl font-black uppercase tracking-widest">Movie Library</h1>
               <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>{movies.length} movie{movies.length !== 1 ? "s" : ""} in the library</p>
             </div>
             <div className="flex gap-2">

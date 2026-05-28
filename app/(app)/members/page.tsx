@@ -35,7 +35,7 @@ export default function MembersPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="px-[8%] py-6 flex flex-col gap-6">
           <div>
-            <h1 className="neon-heading text-2xl font-black mb-1 uppercase tracking-widest">
+            <h1 className="neon-heading text-4xl font-black mb-1 uppercase tracking-widest">
               Members
             </h1>
             <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>

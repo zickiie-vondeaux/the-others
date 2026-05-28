@@ -38,11 +38,11 @@ type PanelKey = "games" | "movies" | "members" | "most-active";
 function QLRow({ label, value }: { label: string; value: string | number }) {
   return (
     <div
-      className="flex items-center justify-between gap-4 py-1.5 border-b last:border-b-0"
+      className="flex items-center justify-between gap-2 py-0.5 border-b last:border-b-0"
       style={{ borderColor: "var(--color-border)" }}
     >
-      <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>{label}</span>
-      <span className="text-xs font-medium text-right" style={{ color: "var(--color-text-primary)" }}>{value}</span>
+      <span className="text-sm" style={{ color: "var(--color-text-muted)" }}>{label}</span>
+      <span className="text-sm font-medium text-right" style={{ color: "var(--color-text-primary)" }}>{value}</span>
     </div>
   );
 }
@@ -55,130 +55,107 @@ export function GroupStats({ stats, quickLook }: GroupStatsProps) {
   const toggle = (key: PanelKey) =>
     setOpenPanel(prev => (prev === key ? null : key));
 
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard
-          icon={<Gamepad2 size={18} />}
-          label="Games"
-          primary={stats.totalGames}
-          sub={`${stats.gamesPlaying} playing · ${stats.gamesCompleted} done`}
-          color="var(--color-cyan)"
-          bg="rgba(6,182,212,0.08)"
-          onQuickLook={() => toggle("games")}
-          quickLookActive={openPanel === "games"}
-        />
-        <StatCard
-          icon={<Film size={18} />}
-          label="Movies"
-          primary={stats.totalMovies}
-          sub={`${stats.moviesWatched} watched`}
-          color="var(--color-purple)"
-          bg="rgba(139,92,246,0.08)"
-          onQuickLook={() => toggle("movies")}
-          quickLookActive={openPanel === "movies"}
-        />
-        <StatCard
-          icon={<Users size={18} />}
-          label="Members"
-          primary={stats.activeMembers}
-          sub={`of ${stats.totalMembers} total`}
-          color="var(--color-green)"
-          bg="rgba(16,185,129,0.08)"
-          onQuickLook={() => toggle("members")}
-          quickLookActive={openPanel === "members"}
-        />
-        <StatCard
-          icon={<Trophy size={18} />}
-          label="Most Active"
-          primary={stats.topMember?.name ?? "—"}
-          sub={stats.topMember ? `${stats.topMember.count} actions` : "no data yet"}
-          color="var(--color-gold)"
-          bg="rgba(251,191,36,0.08)"
-          small
-          disabled
-          onQuickLook={() => toggle("most-active")}
-          quickLookActive={openPanel === "most-active"}
-        />
-      </div>
-
-      {/* Inline QuickLook panel */}
-      <AnimatePresence mode="wait">
-        {openPanel && (
-          <motion.div
-            key={openPanel}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            style={{ overflow: "hidden" }}
-          >
-            <div
-              className="cyber-card rounded-xl p-4"
-              style={{ backgroundColor: "var(--color-surface)" }}
-            >
-              {openPanel === "games" && (
-                <>
-                  <QLRow label="Total games" value={stats.totalGames} />
-                  <QLRow label="Currently playing" value={stats.gamesPlaying} />
-                  <QLRow label="Completed" value={stats.gamesCompleted} />
-                  {quickLook.recentlyActiveGame && (
-                    <QLRow label="Recently active" value={quickLook.recentlyActiveGame} />
-                  )}
-                  {quickLook.topGameGenres.length > 0 && (
-                    <div className="flex items-center justify-between gap-4 pt-1.5 mt-0.5" style={{ borderTop: "1px solid var(--color-border)" }}>
-                      <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>Top genres</span>
-                      <div className="flex gap-1 flex-wrap justify-end">
-                        {quickLook.topGameGenres.map(g => (
-                          <span
-                            key={g}
-                            className="text-[10px] px-1.5 py-0.5 rounded-full"
-                            style={{ backgroundColor: "rgba(6,182,212,0.15)", color: "var(--color-cyan)" }}
-                          >
-                            {g}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {openPanel === "movies" && (
-                <>
-                  <QLRow label="Total movies" value={stats.totalMovies} />
-                  <QLRow label="Watched" value={stats.moviesWatched} />
-                  <QLRow label="On watchlist" value={quickLook.moviesWatchlist} />
-                  {quickLook.recentlyWatchedMovie && (
-                    <QLRow label="Last watched" value={quickLook.recentlyWatchedMovie} />
-                  )}
-                </>
-              )}
-
-              {openPanel === "members" && (
-                <>
-                  <QLRow label="Total members" value={stats.totalMembers} />
-                  {quickLook.mostActiveThisWeek && (
-                    <QLRow label="Most active this week" value={quickLook.mostActiveThisWeek.name} />
-                  )}
-                  {quickLook.newestMember && (
-                    <QLRow
-                      label="Newest member"
-                      value={`${quickLook.newestMember.name} · joined ${new Date(quickLook.newestMember.joinDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
-                    />
-                  )}
-                </>
-              )}
-
-              {openPanel === "most-active" && (
-                <p className="text-xs text-center py-1" style={{ color: "var(--color-text-muted)" }}>
-                  This feature is coming soon
-                </p>
-              )}
-            </div>
-          </motion.div>
+  const panelContent: Record<PanelKey, React.ReactNode> = {
+    games: (
+      <>
+        <QLRow label="Total games" value={stats.totalGames} />
+        <QLRow label="Currently playing" value={stats.gamesPlaying} />
+        <QLRow label="Completed" value={stats.gamesCompleted} />
+        {quickLook.recentlyActiveGame && (
+          <QLRow label="Recently active" value={quickLook.recentlyActiveGame} />
         )}
-      </AnimatePresence>
+        {quickLook.topGameGenres.length > 0 && (
+          <div className="flex items-center justify-between gap-2 pt-0.5 mt-0.5" style={{ borderTop: "1px solid var(--color-border)" }}>
+            <span className="text-sm" style={{ color: "var(--color-text-muted)" }}>Top genres</span>
+            <div className="flex gap-1 flex-wrap justify-end">
+              {quickLook.topGameGenres.map(g => (
+                <span
+                  key={g}
+                  className="text-xs px-1.5 py-0.5 rounded-full"
+                  style={{ backgroundColor: "rgba(6,182,212,0.15)", color: "var(--color-cyan)" }}
+                >
+                  {g}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </>
+    ),
+    movies: (
+      <>
+        <QLRow label="Total movies" value={stats.totalMovies} />
+        <QLRow label="Watched" value={stats.moviesWatched} />
+        <QLRow label="On watchlist" value={quickLook.moviesWatchlist} />
+        {quickLook.recentlyWatchedMovie && (
+          <QLRow label="Last watched" value={quickLook.recentlyWatchedMovie} />
+        )}
+      </>
+    ),
+    members: (
+      <>
+        <QLRow label="Total members" value={stats.totalMembers} />
+        {quickLook.mostActiveThisWeek && (
+          <QLRow label="Most active this week" value={quickLook.mostActiveThisWeek.name} />
+        )}
+        {quickLook.newestMember && (
+          <QLRow
+            label="Newest member"
+            value={`${quickLook.newestMember.name} · joined ${new Date(quickLook.newestMember.joinDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+          />
+        )}
+      </>
+    ),
+    "most-active": (
+      <p className="text-sm text-center py-1" style={{ color: "var(--color-text-muted)" }}>
+        This feature is coming soon
+      </p>
+    ),
+  };
+
+  const cards: { key: PanelKey; icon: React.ReactNode; label: string; primary: number | string; sub: string; color: string; bg: string; small?: boolean; disabled?: boolean }[] = [
+    { key: "games", icon: <Gamepad2 size={30} />, label: "Games", primary: stats.totalGames, sub: `${stats.gamesPlaying} playing · ${stats.gamesCompleted} done`, color: "var(--color-cyan)", bg: "rgba(6,182,212,0.08)" },
+    { key: "movies", icon: <Film size={30} />, label: "Movies", primary: stats.totalMovies, sub: `${stats.moviesWatched} watched`, color: "var(--color-purple)", bg: "rgba(139,92,246,0.08)" },
+    { key: "members", icon: <Users size={30} />, label: "Members", primary: stats.activeMembers, sub: `of ${stats.totalMembers} total`, color: "var(--color-green)", bg: "rgba(16,185,129,0.08)" },
+    { key: "most-active", icon: <Trophy size={30} />, label: "Most Active", primary: stats.topMember?.name ?? "—", sub: stats.topMember ? `${stats.topMember.count} actions` : "no data yet", color: "var(--color-gold)", bg: "rgba(251,191,36,0.08)", small: true, disabled: true },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-start">
+      {cards.map(({ key, icon, label, primary, sub, color, bg, small, disabled }) => (
+        <div key={key} className="flex flex-col gap-2">
+          <StatCard
+            icon={icon}
+            label={label}
+            primary={primary}
+            sub={sub}
+            color={color}
+            bg={bg}
+            small={small}
+            disabled={disabled}
+            onQuickLook={() => toggle(key)}
+            quickLookActive={openPanel === key}
+          />
+          <AnimatePresence>
+            {openPanel === key && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
+                style={{ overflow: "hidden" }}
+              >
+                <div
+                  className="cyber-card rounded-xl p-2.5"
+                  style={{ backgroundColor: "var(--color-surface)" }}
+                >
+                  {panelContent[key]}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      ))}
     </div>
   );
 }
@@ -206,7 +183,7 @@ function StatCard({
       tabIndex={disabled ? undefined : 0}
       onClick={disabled ? undefined : onQuickLook}
       onKeyDown={disabled ? undefined : e => e.key === "Enter" && onQuickLook()}
-      className="cyber-card rounded-xl p-4 flex flex-col gap-2"
+      className="cyber-card rounded-xl p-4 flex flex-col justify-between min-h-[200px]"
       style={{
         backgroundColor: "var(--color-surface)",
         cursor: disabled ? "default" : "pointer",
@@ -214,16 +191,16 @@ function StatCard({
         outline: "none",
       }}
     >
-      <div className="flex items-center gap-2">
-        <div className="p-1.5 rounded-lg" style={{ backgroundColor: bg, color }}>
+      <div className="flex items-center gap-3">
+        <div className="rounded-lg p-1" style={{ backgroundColor: bg, color }}>
           {icon}
         </div>
-        <span className="text-xs font-medium" style={{ color: "var(--color-text-muted)" }}>{label}</span>
+        <span className="font-semibold leading-none" style={{ fontSize: 30, color: "var(--color-text-muted)" }}>{label}</span>
       </div>
       <div>
         <p
-          className={`font-bold leading-none ${small ? "text-base" : "text-2xl"} truncate`}
-          style={{ color: "var(--color-text-primary)" }}
+          className={`font-bold leading-none truncate`}
+          style={{ fontSize: 40, color: "var(--color-text-primary)" }}
         >
           {primary}
         </p>
@@ -232,7 +209,7 @@ function StatCard({
       {!disabled && (
         <div className="flex justify-end">
           <ChevronDown
-            size={12}
+            size={20}
             style={{
               color: quickLookActive ? color : "var(--color-text-muted)",
               transform: quickLookActive ? "rotate(180deg)" : "rotate(0deg)",

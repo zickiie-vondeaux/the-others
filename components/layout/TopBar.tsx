@@ -30,8 +30,8 @@ export function TopBar({ title }: TopBarProps) {
       }}
     >
       <h1
-        className="text-base font-black uppercase tracking-widest"
-        style={{ color: "#00ffea", textShadow: "0 0 12px rgba(0, 255, 234, 0.5)" }}
+        className="text-2xl font-black uppercase tracking-widest"
+        style={{ color: "#00ffea", textShadow: "0 0 6px #00ffea, 0 0 20px rgba(0, 255, 234, 0.8), 0 0 48px rgba(0, 255, 234, 0.4)" }}
       >
         {title}
       </h1>
