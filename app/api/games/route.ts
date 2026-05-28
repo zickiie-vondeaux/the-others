@@ -37,9 +37,12 @@ export async function DELETE(req: NextRequest) {
   const gameId = req.nextUrl.searchParams.get("id");
   if (!gameId) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
+  // Use admin client for all DB ops to bypass RLS
+  const admin = createAdminClient();
+
   const [{ data: game }, { data: profile }] = await Promise.all([
-    supabase.from("games").select("added_by").eq("id", gameId).single(),
-    supabase.from("profiles").select("role").eq("id", user.id).single(),
+    admin.from("games").select("added_by").eq("id", gameId).single(),
+    admin.from("profiles").select("role").eq("id", user.id).single(),
   ]);
 
   if (!game) return NextResponse.json({ error: "Game not found" }, { status: 404 });
@@ -51,9 +54,13 @@ export async function DELETE(req: NextRequest) {
 
   if (!canDelete) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const admin = createAdminClient();
   await admin.from("game_reviews").delete().eq("game_id", gameId);
-  await admin.from("games").delete().eq("id", gameId);
+  const { error } = await admin.from("games").delete().eq("id", gameId);
+
+  if (error) {
+    console.error("Game delete error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true });
 }

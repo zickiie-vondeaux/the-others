@@ -105,7 +105,11 @@ export default function GamingPage() {
   }
 
   async function deleteGame(gameId: string) {
-    await fetch(`/api/games?id=${gameId}`, { method: "DELETE" });
+    const res = await fetch(`/api/games?id=${gameId}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      console.error("Delete game failed:", res.status, data);
+    }
     fetchData();
   }
 
