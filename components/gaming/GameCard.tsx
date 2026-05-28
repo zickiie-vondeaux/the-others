@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { Gamepad2, Trash2, Star } from "lucide-react";
+import { Gamepad2, Trash2, Star, Check } from "lucide-react";
 import type { Game } from "@/lib/supabase/types";
 
 interface Props {
@@ -11,6 +10,9 @@ interface Props {
   ratingCount: number;
   onClick: () => void;
   onDelete?: () => void;
+  selectMode?: boolean;
+  isSelected?: boolean;
+  onSelect?: (e: React.MouseEvent) => void;
 }
 
 function StarRow({ value, size = 11 }: { value: number; size?: number }) {
@@ -26,21 +28,25 @@ function StarRow({ value, size = 11 }: { value: number; size?: number }) {
   );
 }
 
-export function GameCard({ game, myRating, avgRating, ratingCount, onClick, onDelete }: Props) {
-  const [pendingDelete, setPendingDelete] = useState(false);
-
+export function GameCard({ game, myRating, avgRating, ratingCount, onClick, onDelete, selectMode, isSelected, onSelect }: Props) {
   return (
     <div
       role="button" tabIndex={0}
-      onClick={onClick}
-      onKeyDown={e => e.key === "Enter" && onClick()}
+      onClick={selectMode ? onSelect : onClick}
+      onKeyDown={e => e.key === "Enter" && (selectMode ? onSelect?.(e as unknown as React.MouseEvent) : onClick())}
       className="group relative rounded-xl border overflow-hidden text-left transition-all duration-200 hover:scale-[1.02] cursor-pointer"
-      style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", boxShadow: "none" }}
+      style={{
+        backgroundColor: "var(--color-surface)",
+        borderColor: isSelected ? "var(--color-purple)" : "var(--color-border)",
+        boxShadow: isSelected ? "0 0 20px rgba(124,58,237,0.35)" : "none",
+      }}
       onMouseEnter={e => {
+        if (isSelected) return;
         (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 20px rgba(124,58,237,0.25)";
         (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(124,58,237,0.5)";
       }}
       onMouseLeave={e => {
+        if (isSelected) return;
         (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
         (e.currentTarget as HTMLDivElement).style.borderColor = "var(--color-border)";
       }}
@@ -52,8 +58,19 @@ export function GameCard({ game, myRating, avgRating, ratingCount, onClick, onDe
           : <div className="w-full h-full flex items-center justify-center"><Gamepad2 size={36} style={{ color: "var(--color-text-muted)" }} /></div>
         }
 
+        {/* Select checkbox */}
+        {selectMode && (
+          <div className="absolute top-2 left-2 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors"
+            style={{
+              backgroundColor: isSelected ? "var(--color-purple)" : "rgba(0,0,0,0.6)",
+              borderColor: isSelected ? "var(--color-purple)" : "rgba(255,255,255,0.4)",
+            }}>
+            {isSelected && <Check size={12} color="white" strokeWidth={3} />}
+          </div>
+        )}
+
         {/* My rating badge */}
-        {myRating !== null && (
+        {myRating !== null && !selectMode && (
           <div className="absolute top-2 right-2">
             <span className="text-xs font-bold px-1.5 py-0.5 rounded-full"
               style={{ backgroundColor: "rgba(251,191,36,0.25)", color: "var(--color-gold)" }}>
@@ -63,7 +80,7 @@ export function GameCard({ game, myRating, avgRating, ratingCount, onClick, onDe
         )}
 
         {/* Multiplayer badge */}
-        {game.is_multiplayer && (
+        {game.is_multiplayer && !selectMode && (
           <div className="absolute bottom-2 right-2">
             <span className="text-xs px-1.5 py-0.5 rounded-full font-medium"
               style={{ backgroundColor: "rgba(6,182,212,0.2)", color: "var(--color-cyan)" }}>
@@ -72,31 +89,14 @@ export function GameCard({ game, myRating, avgRating, ratingCount, onClick, onDe
           </div>
         )}
 
-        {/* Delete button / confirmation */}
-        {onDelete && (
-          pendingDelete ? (
-            <div className="absolute inset-x-0 bottom-0 flex gap-1.5 p-2"
-              style={{ backgroundColor: "rgba(0,0,0,0.88)" }}
-              onClick={e => e.stopPropagation()}>
-              <button onClick={e => { e.stopPropagation(); setPendingDelete(false); }}
-                className="flex-1 py-1 rounded-md text-xs font-medium transition-colors hover:bg-white/10"
-                style={{ color: "var(--color-text-secondary)" }}>
-                Cancel
-              </button>
-              <button onClick={e => { e.stopPropagation(); onDelete(); }}
-                className="flex-1 py-1 rounded-md text-xs font-semibold"
-                style={{ backgroundColor: "#ef4444", color: "#fff" }}>
-                Remove
-              </button>
-            </div>
-          ) : (
-            <button onClick={e => { e.stopPropagation(); setPendingDelete(true); }}
-              className="absolute bottom-2 left-2 p-2 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
-              style={{ backgroundColor: "rgba(0,0,0,0.75)", color: "#ef4444" }}
-              aria-label="Remove game">
-              <Trash2 size={18} />
-            </button>
-          )
+        {/* Delete button */}
+        {onDelete && !selectMode && (
+          <button onClick={e => { e.stopPropagation(); onDelete(); }}
+            className="absolute bottom-2 left-2 p-2 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ backgroundColor: "rgba(0,0,0,0.75)", color: "#ef4444" }}
+            aria-label="Remove game">
+            <Trash2 size={18} />
+          </button>
         )}
       </div>
 

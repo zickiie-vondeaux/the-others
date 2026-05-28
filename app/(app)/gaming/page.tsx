@@ -8,12 +8,13 @@ import { GameDetailModal, type GameReviewWithProfile } from "@/components/gaming
 import { SteamImportModal } from "@/components/gaming/SteamImportModal";
 import { createClient } from "@/lib/supabase/client";
 import { type Game, type GameReview, type Profile } from "@/lib/supabase/types";
-import { Plus, LayoutGrid, List, Filter, Gamepad2, Download, Star } from "lucide-react";
+import { Plus, LayoutGrid, List, Filter, Gamepad2, Download, Star, Trash2, CheckSquare, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { GridSkeleton } from "@/components/ui/Skeleton";
 
 type Tab = "all" | "rated" | "unrated";
 type ViewMode = "grid" | "list";
+type DateFilter = "all" | "week" | "month" | "3months";
 
 interface GameReviewRow {
   user_id: string;
@@ -25,11 +26,30 @@ interface GameReviewRow {
   updated_at: string;
 }
 
+type DeleteTarget =
+  | { type: "single"; game: Game }
+  | { type: "bulk"; ids: string[] };
+
 const TABS: { id: Tab; label: string }[] = [
   { id: "all",     label: "All" },
   { id: "rated",   label: "Rated" },
   { id: "unrated", label: "Unrated" },
 ];
+
+const DATE_OPTIONS: { id: DateFilter; label: string }[] = [
+  { id: "all",     label: "All time" },
+  { id: "week",    label: "Past week" },
+  { id: "month",   label: "Past month" },
+  { id: "3months", label: "Past 3 months" },
+];
+
+function dateThreshold(filter: DateFilter): Date | null {
+  const now = new Date();
+  if (filter === "week")    { now.setDate(now.getDate() - 7);   return now; }
+  if (filter === "month")   { now.setMonth(now.getMonth() - 1); return now; }
+  if (filter === "3months") { now.setMonth(now.getMonth() - 3); return now; }
+  return null;
+}
 
 export default function GamingPage() {
   const [games, setGames] = useState<Game[]>([]);
@@ -40,14 +60,27 @@ export default function GamingPage() {
   const [mySteamId, setMySteamId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Filters
   const [tab, setTab] = useState<Tab>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [genreFilter, setGenreFilter] = useState("all");
   const [platformFilter, setPlatformFilter] = useState("all");
+  const [addedByFilter, setAddedByFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [showFilters, setShowFilters] = useState(false);
+
+  // Modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSteamModal, setShowSteamModal] = useState(false);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+
+  // Delete
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  // Bulk select
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const fetchData = useCallback(async () => {
     const supabase = createClient();
@@ -79,7 +112,6 @@ export default function GamingPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Derived helpers
   function myReviewForGame(gameId: string): GameReview | null {
     const r = allReviews.find(r => r.user_id === myUserId && r.game_id === gameId);
     return r ? (r as GameReview) : null;
@@ -104,17 +136,40 @@ export default function GamingPage() {
     return allReviews.filter(r => r.game_id === gameId).length;
   }
 
-  async function deleteGame(gameId: string) {
-    const res = await fetch(`/api/games?id=${gameId}`, { method: "DELETE" });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      console.error("Delete game failed:", res.status, data);
-    }
+  function canDelete(game: Game): boolean {
+    return myRole === "super_admin" || myRole === "moderator" || game.added_by === myUserId;
+  }
+
+  async function runDelete(ids: string[]) {
+    setDeleting(true);
+    await Promise.all(ids.map(id => fetch(`/api/games?id=${id}`, { method: "DELETE" })));
+    setDeleting(false);
+    setDeleteTarget(null);
+    setSelectedIds(new Set());
+    setSelectMode(false);
     fetchData();
   }
 
+  function toggleSelectGame(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }
+
+  // Importer options — only members who have actually added games
+  const importerOptions = profiles.filter(p => games.some(g => g.added_by === p.id));
+
   const allGenres = Array.from(new Set(games.flatMap(g => g.genres))).sort();
   const allPlatforms = Array.from(new Set(games.flatMap(g => g.platforms))).sort();
+  const activeFilterCount = [genreFilter, platformFilter, addedByFilter].filter(f => f !== "all").length
+    + (dateFilter !== "all" ? 1 : 0);
 
   const filteredGames = games.filter(g => {
     const hasRatings = ratingCountForGame(g.id) > 0;
@@ -122,6 +177,9 @@ export default function GamingPage() {
     if (tab === "unrated" && hasRatings) return false;
     if (genreFilter !== "all" && !g.genres.includes(genreFilter)) return false;
     if (platformFilter !== "all" && !g.platforms.includes(platformFilter)) return false;
+    if (addedByFilter !== "all" && g.added_by !== addedByFilter) return false;
+    const threshold = dateThreshold(dateFilter);
+    if (threshold && new Date(g.created_at) < threshold) return false;
     return true;
   });
 
@@ -131,11 +189,17 @@ export default function GamingPage() {
     unrated: games.filter(g => ratingCountForGame(g.id) === 0).length,
   };
 
+  const anyFilterActive = activeFilterCount > 0;
+  const selectedCanDelete = [...selectedIds].every(id => {
+    const g = games.find(x => x.id === id);
+    return g && canDelete(g);
+  });
+
   return (
     <>
       <TopBar title="Gaming Library" />
 
-      <div className="flex-1 py-6 px-[8%] overflow-y-auto">
+      <div className="flex-1 py-6 px-[8%] overflow-y-auto pb-28">
         <div className="space-y-5">
 
           {/* Page header */}
@@ -191,15 +255,22 @@ export default function GamingPage() {
           </div>
 
           {/* Controls row */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <button onClick={() => setShowFilters(v => !v)}
               className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors")}
               style={{
-                borderColor: showFilters ? "var(--color-purple)" : "var(--color-border)",
-                color: showFilters ? "var(--color-purple-light)" : "var(--color-text-secondary)",
-                backgroundColor: showFilters ? "rgba(124,58,237,0.08)" : "transparent",
+                borderColor: showFilters || anyFilterActive ? "var(--color-purple)" : "var(--color-border)",
+                color: showFilters || anyFilterActive ? "var(--color-purple-light)" : "var(--color-text-secondary)",
+                backgroundColor: showFilters || anyFilterActive ? "rgba(124,58,237,0.08)" : "transparent",
               }}>
-              <Filter size={13} /> Filters
+              <Filter size={13} />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="text-xs px-1.5 py-0.5 rounded-full font-bold"
+                  style={{ backgroundColor: "var(--color-purple)", color: "#fff" }}>
+                  {activeFilterCount}
+                </span>
+              )}
             </button>
 
             <div className="flex rounded-lg border overflow-hidden" style={{ borderColor: "var(--color-border)" }}>
@@ -214,36 +285,72 @@ export default function GamingPage() {
               ))}
             </div>
 
+            {/* Select mode toggle */}
+            <button onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm border transition-colors"
+              style={{
+                borderColor: selectMode ? "var(--color-red)" : "var(--color-border)",
+                color: selectMode ? "#ef4444" : "var(--color-text-secondary)",
+                backgroundColor: selectMode ? "rgba(239,68,68,0.08)" : "transparent",
+              }}>
+              <CheckSquare size={13} />
+              {selectMode ? "Cancel" : "Select"}
+            </button>
+
             <span className="ml-auto text-xs" style={{ color: "var(--color-text-muted)" }}>
               {filteredGames.length} result{filteredGames.length !== 1 ? "s" : ""}
             </span>
           </div>
 
-          {/* Filter pills */}
+          {/* Filter panel */}
           {showFilters && (
-            <div className="flex flex-wrap gap-3 p-4 rounded-xl border" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
-              <div className="flex items-center gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl border"
+              style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
+              <div className="space-y-1">
                 <label className="text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>Genre</label>
                 <select value={genreFilter} onChange={e => setGenreFilter(e.target.value)}
-                  className="px-2 py-1 rounded-lg border text-xs outline-none"
+                  className="w-full px-2 py-1.5 rounded-lg border text-xs outline-none"
                   style={{ backgroundColor: "var(--color-surface-elevated)", borderColor: "var(--color-border)", color: "var(--color-text-primary)" }}>
                   <option value="all">All genres</option>
                   {allGenres.map(g => <option key={g} value={g}>{g}</option>)}
                 </select>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="space-y-1">
                 <label className="text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>Platform</label>
                 <select value={platformFilter} onChange={e => setPlatformFilter(e.target.value)}
-                  className="px-2 py-1 rounded-lg border text-xs outline-none"
+                  className="w-full px-2 py-1.5 rounded-lg border text-xs outline-none"
                   style={{ backgroundColor: "var(--color-surface-elevated)", borderColor: "var(--color-border)", color: "var(--color-text-primary)" }}>
                   <option value="all">All platforms</option>
                   {allPlatforms.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
-              {(genreFilter !== "all" || platformFilter !== "all") && (
-                <button onClick={() => { setGenreFilter("all"); setPlatformFilter("all"); }}
-                  className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                  Clear filters
+              <div className="space-y-1">
+                <label className="text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>Added by</label>
+                <select value={addedByFilter} onChange={e => setAddedByFilter(e.target.value)}
+                  className="w-full px-2 py-1.5 rounded-lg border text-xs outline-none"
+                  style={{ backgroundColor: "var(--color-surface-elevated)", borderColor: "var(--color-border)", color: "var(--color-text-primary)" }}>
+                  <option value="all">Anyone</option>
+                  {importerOptions.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.id === myUserId ? "Me" : p.display_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>Added on</label>
+                <select value={dateFilter} onChange={e => setDateFilter(e.target.value as DateFilter)}
+                  className="w-full px-2 py-1.5 rounded-lg border text-xs outline-none"
+                  style={{ backgroundColor: "var(--color-surface-elevated)", borderColor: "var(--color-border)", color: "var(--color-text-primary)" }}>
+                  {DATE_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+                </select>
+              </div>
+              {anyFilterActive && (
+                <button
+                  onClick={() => { setGenreFilter("all"); setPlatformFilter("all"); setAddedByFilter("all"); setDateFilter("all"); }}
+                  className="col-span-2 sm:col-span-4 text-xs text-left"
+                  style={{ color: "var(--color-text-muted)" }}>
+                  Clear all filters
                 </button>
               )}
             </div>
@@ -261,8 +368,11 @@ export default function GamingPage() {
                   myRating={myReviewForGame(game.id)?.rating ?? null}
                   avgRating={avgRatingForGame(game.id)}
                   ratingCount={ratingCountForGame(game.id)}
-                  onClick={() => setSelectedGame(game)}
-                  onDelete={myRole === "super_admin" || myRole === "moderator" || game.added_by === myUserId ? () => deleteGame(game.id) : undefined}
+                  onClick={() => !selectMode && setSelectedGame(game)}
+                  onDelete={canDelete(game) && !selectMode ? () => setDeleteTarget({ type: "single", game }) : undefined}
+                  selectMode={selectMode}
+                  isSelected={selectedIds.has(game.id)}
+                  onSelect={() => toggleSelectGame(game.id)}
                 />
               ))}
             </div>
@@ -274,13 +384,96 @@ export default function GamingPage() {
                   avgRating={avgRatingForGame(game.id)}
                   ratingCount={ratingCountForGame(game.id)}
                   totalMembers={profiles.length}
-                  onClick={() => setSelectedGame(game)}
+                  canDelete={canDelete(game) && !selectMode}
+                  selectMode={selectMode}
+                  isSelected={selectedIds.has(game.id)}
+                  onClick={() => selectMode ? toggleSelectGame(game.id) : setSelectedGame(game)}
+                  onDelete={() => setDeleteTarget({ type: "single", game })}
+                  onSelect={() => toggleSelectGame(game.id)}
                 />
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Bulk action bar */}
+      {selectMode && (
+        <div className="fixed bottom-0 inset-x-0 z-40 flex items-center justify-between px-8 py-4 border-t"
+          style={{ backgroundColor: "var(--color-surface-elevated)", borderColor: "var(--color-border)" }}>
+          <p className="text-sm font-medium" style={{ color: "var(--color-text-secondary)" }}>
+            {selectedIds.size > 0
+              ? `${selectedIds.size} game${selectedIds.size !== 1 ? "s" : ""} selected`
+              : "Tap games to select them"}
+          </p>
+          <div className="flex items-center gap-3">
+            <button onClick={exitSelectMode}
+              className="px-4 py-2 rounded-xl border text-sm transition-colors hover:bg-white/5"
+              style={{ borderColor: "var(--color-border)", color: "var(--color-text-secondary)" }}>
+              Cancel
+            </button>
+            <button
+              onClick={() => selectedIds.size > 0 && selectedCanDelete && setDeleteTarget({ type: "bulk", ids: [...selectedIds] })}
+              disabled={selectedIds.size === 0 || !selectedCanDelete}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-colors disabled:opacity-40"
+              style={{ backgroundColor: "#ef4444", color: "#fff" }}>
+              <Trash2 size={14} />
+              Delete {selectedIds.size > 0 ? selectedIds.size : ""} selected
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
+            onClick={() => !deleting && setDeleteTarget(null)} />
+          <div className="relative w-full max-w-sm rounded-2xl border p-6 space-y-4"
+            style={{ backgroundColor: "var(--color-surface-elevated)", borderColor: "var(--color-border)" }}>
+            <button onClick={() => !deleting && setDeleteTarget(null)}
+              className="absolute top-4 right-4 p-1 rounded-lg hover:bg-white/5 transition-colors"
+              style={{ color: "var(--color-text-muted)" }}>
+              <X size={16} />
+            </button>
+
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: "rgba(239,68,68,0.15)" }}>
+                <Trash2 size={18} style={{ color: "#ef4444" }} />
+              </div>
+              <div>
+                <p className="font-semibold text-sm" style={{ color: "var(--color-text-primary)" }}>
+                  {deleteTarget.type === "single"
+                    ? `Remove "${deleteTarget.game.title}"?`
+                    : `Remove ${deleteTarget.ids.length} game${deleteTarget.ids.length !== 1 ? "s" : ""}?`}
+                </p>
+                <p className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }}>
+                  This will also delete all ratings for {deleteTarget.type === "single" ? "this game" : "these games"}.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button onClick={() => setDeleteTarget(null)} disabled={deleting}
+                className="flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors hover:bg-white/5 disabled:opacity-50"
+                style={{ borderColor: "var(--color-border)", color: "var(--color-text-secondary)" }}>
+                Cancel
+              </button>
+              <button
+                onClick={() => runDelete(deleteTarget.type === "single" ? [deleteTarget.game.id] : deleteTarget.ids)}
+                disabled={deleting}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{ backgroundColor: "#ef4444", color: "#fff" }}>
+                {deleting
+                  ? <><Loader2 size={14} className="animate-spin" /> Removing…</>
+                  : "Remove"
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       {showAddModal && (
@@ -338,36 +531,48 @@ function EmptyState({ tab, onAdd }: { tab: Tab; onAdd: () => void }) {
 }
 
 function ListRow({
-  game, myRating, avgRating, ratingCount, totalMembers, onClick,
+  game, myRating, avgRating, ratingCount, totalMembers, canDelete, selectMode, isSelected, onClick, onDelete, onSelect,
 }: {
   game: Game;
   myRating: number | null;
   avgRating: number | null;
   ratingCount: number;
   totalMembers: number;
+  canDelete: boolean;
+  selectMode: boolean;
+  isSelected: boolean;
   onClick: () => void;
+  onDelete: () => void;
+  onSelect: () => void;
 }) {
   return (
     <button onClick={onClick}
       className="w-full flex items-center gap-4 p-3 rounded-xl border text-left transition-colors hover:bg-white/5"
-      style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
-      {/* Cover */}
+      style={{
+        backgroundColor: "var(--color-surface)",
+        borderColor: isSelected ? "var(--color-purple)" : "var(--color-border)",
+      }}>
+      {selectMode && (
+        <div className="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors"
+          style={{
+            backgroundColor: isSelected ? "var(--color-purple)" : "transparent",
+            borderColor: isSelected ? "var(--color-purple)" : "var(--color-border)",
+          }}>
+          {isSelected && <span className="text-white text-xs font-bold">✓</span>}
+        </div>
+      )}
       <div className="w-10 h-14 rounded-lg overflow-hidden flex-shrink-0" style={{ backgroundColor: "var(--color-surface-elevated)" }}>
         {game.cover_url
           ? <img src={game.cover_url} alt={game.title} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
           : <div className="w-full h-full flex items-center justify-center"><Gamepad2 size={14} style={{ color: "var(--color-text-muted)" }} /></div>
         }
       </div>
-
-      {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm truncate" style={{ color: "var(--color-text-primary)" }}>{game.title}</p>
         <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
           {[game.release_year, game.genres.slice(0, 2).join(", ")].filter(Boolean).join(" · ")}
         </p>
       </div>
-
-      {/* Rating + stats */}
       <div className="flex items-center gap-3 flex-shrink-0">
         {avgRating !== null ? (
           <span className="flex items-center gap-1 text-xs" style={{ color: "var(--color-gold)" }}>
@@ -383,6 +588,13 @@ function ListRow({
             style={{ backgroundColor: "rgba(251,191,36,0.2)", color: "var(--color-gold)" }}>
             ★{myRating}
           </span>
+        )}
+        {canDelete && !selectMode && (
+          <button onClick={e => { e.stopPropagation(); onDelete(); }}
+            className="p-1.5 rounded-lg hover:bg-red-500/10 transition-colors"
+            style={{ color: "#ef4444" }}>
+            <Trash2 size={14} />
+          </button>
         )}
       </div>
     </button>
