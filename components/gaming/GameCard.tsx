@@ -17,21 +17,24 @@ export function GameCard({ game, myStatus, playedCount, wantCount, totalMembers,
   const statusMeta = GROUP_STATUS_META[game.group_status];
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      className="group relative rounded-xl border overflow-hidden text-left transition-all duration-200 hover:scale-[1.02]"
+      onKeyDown={e => e.key === "Enter" && onClick()}
+      className="group relative rounded-xl border overflow-hidden text-left transition-all duration-200 hover:scale-[1.02] cursor-pointer"
       style={{
         backgroundColor: "var(--color-surface)",
         borderColor: "var(--color-border)",
         boxShadow: "none",
       }}
       onMouseEnter={e => {
-        (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 20px rgba(124,58,237,0.25)";
-        (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(124,58,237,0.5)";
+        (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 20px rgba(124,58,237,0.25)";
+        (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(124,58,237,0.5)";
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
-        (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--color-border)";
+        (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+        (e.currentTarget as HTMLDivElement).style.borderColor = "var(--color-border)";
       }}
     >
       {/* Cover art */}
@@ -133,6 +136,6 @@ export function GameCard({ game, myStatus, playedCount, wantCount, totalMembers,
           )}
         </div>
       </div>
-    </button>
+    </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { TopBar } from "@/components/layout/TopBar";
 import { ActivityFeed } from "@/components/group/ActivityFeed";
-import { GroupStats } from "@/components/group/GroupStats";
+import { GroupStats, type QuickLookData } from "@/components/group/GroupStats";
 import { PersonalityOverview } from "@/components/group/PersonalityOverview";
 import { BirthdayBanner } from "@/components/birthday/BirthdayBanner";
 import { BirthdayMessageWall } from "@/components/birthday/BirthdayMessageWall";
@@ -31,12 +31,21 @@ export default function GroupCornerPage() {
     totalMembers: 0,
     topMember: null as { name: string; count: number } | null,
   });
+  const [quickLook, setQuickLook] = useState<QuickLookData>({
+    topGameGenres: [],
+    recentlyActiveGame: null,
+    moviesWatchlist: 0,
+    recentlyWatchedMovie: null,
+    mostActiveThisWeek: null,
+    newestMember: null,
+  });
 
   const supabase = createClient();
 
   const load = useCallback(async () => {
+    try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) { setLoading(false); return; }
     setMyUserId(user.id);
 
     const [
@@ -47,19 +56,23 @@ export default function GroupCornerPage() {
       { data: profilesData },
       { data: personalityData },
       { data: activityCountData },
+      { data: weeklyActivityData },
     ] = await Promise.all([
       supabase.from("activity_feed")
         .select("*, profile:profiles!activity_feed_user_id_fkey(id,display_name,avatar_url,username)")
         .order("created_at", { ascending: false })
         .limit(50),
       supabase.from("reactions").select("user_id,emoji,activity_id"),
-      supabase.from("games").select("group_status"),
+      supabase.from("games").select("genres, group_status"),
       supabase.from("movies").select("group_status"),
-      supabase.from("profiles").select("id,display_name"),
+      supabase.from("profiles").select("id,display_name,created_at"),
       supabase.from("personality_results").select("*").eq("is_shared", true),
       supabase.from("activity_feed")
         .select("user_id")
         .gte("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
+      supabase.from("activity_feed")
+        .select("user_id")
+        .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
     ]);
 
     setFeed((feedData ?? []) as ActivityEntryWithProfile[]);
@@ -79,18 +92,71 @@ export default function GroupCornerPage() {
     const topEntry = Object.entries(actCounts).sort((a, b) => b[1] - a[1])[0];
     const topProfile = topEntry ? (profiles as { id: string; display_name: string }[]).find(p => p.id === topEntry[0]) : null;
 
+    const typedGames = games as { genres: string[]; group_status: string }[];
+    const typedMovies = movies as { group_status: string }[];
+    const typedProfiles = profiles as { id: string; display_name: string; created_at: string }[];
+
     setStats({
       totalGames: games.length,
-      gamesPlaying: (games as { group_status: string }[]).filter(g => g.group_status === "playing").length,
-      gamesCompleted: (games as { group_status: string }[]).filter(g => g.group_status === "completed").length,
+      gamesPlaying: typedGames.filter(g => g.group_status === "playing").length,
+      gamesCompleted: typedGames.filter(g => g.group_status === "completed").length,
       totalMovies: movies.length,
-      moviesWatched: (movies as { group_status: string }[]).filter(m => m.group_status === "watched").length,
+      moviesWatched: typedMovies.filter(m => m.group_status === "watched").length,
       activeMembers: Object.keys(actCounts).length,
       totalMembers: profiles.length,
       topMember: topProfile ? { name: topProfile.display_name, count: topEntry[1] } : null,
     });
 
+    // QuickLook data
+    const genreCount: Record<string, number> = {};
+    typedGames.forEach(g => {
+      (Array.isArray(g.genres) ? g.genres : []).forEach(genre => {
+        if (typeof genre === "string") genreCount[genre] = (genreCount[genre] ?? 0) + 1;
+      });
+    });
+    const topGameGenres = Object.entries(genreCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([g]) => g);
+
+    const recentlyActiveGame =
+      (feedData ?? []).find(e => e.type === "game_added" || e.type === "game_status")
+        ?.entity_title ?? null;
+
+    const moviesWatchlist = typedMovies.filter(m => m.group_status === "queue").length;
+
+    const recentlyWatchedMovie =
+      (feedData ?? []).find(e => e.type === "movie_watched")?.entity_title ?? null;
+
+    const weekCounts: Record<string, number> = {};
+    (weeklyActivityData ?? []).forEach((a: { user_id: string }) => {
+      weekCounts[a.user_id] = (weekCounts[a.user_id] ?? 0) + 1;
+    });
+    const topWeekEntry = Object.entries(weekCounts).sort((a, b) => b[1] - a[1])[0];
+    const topWeekProfile = topWeekEntry
+      ? typedProfiles.find(p => p.id === topWeekEntry[0])
+      : null;
+
+    const newestProfile = [...typedProfiles].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )[0];
+
+    setQuickLook({
+      topGameGenres,
+      recentlyActiveGame,
+      moviesWatchlist,
+      recentlyWatchedMovie,
+      mostActiveThisWeek: topWeekProfile ? { name: topWeekProfile.display_name } : null,
+      newestMember: newestProfile
+        ? { name: newestProfile.display_name, joinDate: newestProfile.created_at }
+        : null,
+    });
+
     setLoading(false);
+    } catch (err) {
+      console.error("[GroupCorner] load error:", err);
+      setLoading(false);
+    }
   }, [supabase]);
 
   useEffect(() => { load(); }, [load]);
@@ -154,7 +220,7 @@ export default function GroupCornerPage() {
             );
           })()}
 
-          <GroupStats stats={stats} />
+          <GroupStats stats={stats} quickLook={quickLook} />
 
           {/* Upcoming birthdays */}
           {upcomingBirthdays.length > 0 && (
