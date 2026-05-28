@@ -260,7 +260,7 @@ export default function GamingPage() {
                   avgRating={avgRatingForGame(game.id)}
                   ratingCount={ratingCountForGame(game.id)}
                   onClick={() => setSelectedGame(game)}
-                  onDelete={() => deleteGame(game.id)}
+                  onDelete={myRole === "super_admin" || myRole === "moderator" || game.added_by === myUserId ? () => deleteGame(game.id) : undefined}
                 />
               ))}
             </div>

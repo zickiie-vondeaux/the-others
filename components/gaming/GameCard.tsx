@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Gamepad2, Trash2, Star } from "lucide-react";
 import type { Game } from "@/lib/supabase/types";
 
@@ -26,6 +27,8 @@ function StarRow({ value, size = 11 }: { value: number; size?: number }) {
 }
 
 export function GameCard({ game, myRating, avgRating, ratingCount, onClick, onDelete }: Props) {
+  const [pendingDelete, setPendingDelete] = useState(false);
+
   return (
     <div
       role="button" tabIndex={0}
@@ -69,14 +72,31 @@ export function GameCard({ game, myRating, avgRating, ratingCount, onClick, onDe
           </div>
         )}
 
-        {/* Delete button */}
+        {/* Delete button / confirmation */}
         {onDelete && (
-          <button onClick={e => { e.stopPropagation(); onDelete(); }}
-            className="absolute bottom-2 left-2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-            style={{ backgroundColor: "rgba(0,0,0,0.6)", color: "#ef4444" }}
-            aria-label="Remove game">
-            <Trash2 size={12} />
-          </button>
+          pendingDelete ? (
+            <div className="absolute inset-x-0 bottom-0 flex gap-1.5 p-2"
+              style={{ backgroundColor: "rgba(0,0,0,0.88)" }}
+              onClick={e => e.stopPropagation()}>
+              <button onClick={e => { e.stopPropagation(); setPendingDelete(false); }}
+                className="flex-1 py-1 rounded-md text-xs font-medium transition-colors hover:bg-white/10"
+                style={{ color: "var(--color-text-secondary)" }}>
+                Cancel
+              </button>
+              <button onClick={e => { e.stopPropagation(); onDelete(); }}
+                className="flex-1 py-1 rounded-md text-xs font-semibold"
+                style={{ backgroundColor: "#ef4444", color: "#fff" }}>
+                Remove
+              </button>
+            </div>
+          ) : (
+            <button onClick={e => { e.stopPropagation(); setPendingDelete(true); }}
+              className="absolute bottom-2 left-2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              style={{ backgroundColor: "rgba(0,0,0,0.7)", color: "#ef4444" }}
+              aria-label="Remove game">
+              <Trash2 size={12} />
+            </button>
+          )
         )}
       </div>
 
