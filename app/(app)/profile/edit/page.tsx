@@ -21,14 +21,18 @@ export default function EditProfilePage() {
     favorite_color: "#7c3aed", favorite_music: "", platforms: [] as string[],
     steam_id: "",
   });
+  const [userId, setUserId] = useState("");
   const [steamInput, setSteamInput] = useState("");
   const [steamConnecting, setSteamConnecting] = useState(false);
   const [steamError, setSteamError] = useState("");
+  const [disconnectConfirm, setDisconnectConfirm] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return;
+      setUserId(user.id);
       const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       if (data) {
         setForm({
@@ -98,6 +102,25 @@ export default function EditProfilePage() {
     } finally {
       setSteamConnecting(false);
     }
+  }
+
+  async function confirmDisconnect() {
+    setDisconnecting(true);
+    const supabase = createClient();
+    const { data: steamGames } = await supabase
+      .from("games")
+      .select("id")
+      .eq("added_by", userId)
+      .not("steam_app_id", "is", null);
+    if (steamGames && steamGames.length > 0) {
+      const ids = steamGames.map(g => g.id);
+      await supabase.from("game_reviews").delete().in("game_id", ids);
+      await supabase.from("games").delete().in("id", ids);
+    }
+    setForm(f => ({ ...f, steam_id: "" }));
+    setSteamInput("");
+    setDisconnectConfirm(false);
+    setDisconnecting(false);
   }
 
   async function save() {
@@ -221,6 +244,26 @@ export default function EditProfilePage() {
                 </p>
 
                 {form.steam_id ? (
+                  disconnectConfirm ? (
+                    <div className="p-3 rounded-xl border space-y-3"
+                      style={{ borderColor: "var(--color-red)", backgroundColor: "color-mix(in srgb, var(--color-red) 8%, transparent)" }}>
+                      <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                        This will remove all your Steam-imported games from the Gaming Library. Are you sure?
+                      </p>
+                      <div className="flex gap-2">
+                        <button onClick={confirmDisconnect} disabled={disconnecting}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+                          style={{ backgroundColor: "var(--color-red)", color: "#fff" }}>
+                          {disconnecting ? "Removing…" : "Yes, disconnect & remove games"}
+                        </button>
+                        <button onClick={() => setDisconnectConfirm(false)}
+                          className="px-3 py-1.5 rounded-lg text-xs hover:bg-white/5 transition-colors"
+                          style={{ color: "var(--color-text-muted)" }}>
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
                   <div className="flex items-center gap-3 p-3 rounded-xl border"
                     style={{ borderColor: "var(--color-green)", backgroundColor: "color-mix(in srgb, var(--color-green) 8%, transparent)" }}>
                     <Check size={15} style={{ color: "var(--color-green)" }} />
@@ -228,12 +271,13 @@ export default function EditProfilePage() {
                       <p className="text-xs font-medium" style={{ color: "var(--color-green)" }}>Steam Connected</p>
                       <p className="text-xs font-mono truncate" style={{ color: "var(--color-text-muted)" }}>{form.steam_id}</p>
                     </div>
-                    <button onClick={() => { setForm(f => ({ ...f, steam_id: "" })); setSteamInput(""); }}
+                    <button onClick={() => setDisconnectConfirm(true)}
                       className="text-xs px-2 py-1 rounded-lg hover:bg-white/5 transition-colors"
                       style={{ color: "var(--color-text-muted)" }}>
                       Disconnect
                     </button>
                   </div>
+                  )
                 ) : (
                   <div className="space-y-2">
                     <Field label="Steam ID or Profile URL">

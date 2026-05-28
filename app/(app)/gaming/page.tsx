@@ -289,7 +289,7 @@ export default function GamingPage() {
         <SteamImportModal
           userId={myUserId}
           steamId={mySteamId}
-          existingSteamIds={new Set(games.map(g => g.steam_app_id).filter((id): id is number => id !== null))}
+          existingGames={games.filter(g => g.steam_app_id !== null).map(g => ({ id: g.id, steam_app_id: g.steam_app_id! }))}
           onClose={() => setShowSteamModal(false)}
           onImported={fetchData}
         />
