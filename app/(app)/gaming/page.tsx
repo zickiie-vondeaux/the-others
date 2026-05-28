@@ -104,6 +104,7 @@ export default function GamingPage() {
 
   async function deleteGame(gameId: string) {
     const supabase = createClient();
+    await supabase.from("user_game_status").delete().eq("game_id", gameId);
     await supabase.from("games").delete().eq("id", gameId);
     fetchData();
   }
@@ -394,7 +395,7 @@ function ListRow({
       <div className="w-10 h-14 rounded-lg overflow-hidden flex-shrink-0"
         style={{ backgroundColor: "var(--color-surface-elevated)" }}>
         {game.cover_url
-          ? <img src={game.cover_url} alt={game.title} className="w-full h-full object-cover" />
+          ? <img src={game.cover_url} alt={game.title} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
           : <div className="w-full h-full flex items-center justify-center">
               <Gamepad2 size={14} style={{ color: "var(--color-text-muted)" }} />
             </div>

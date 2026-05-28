@@ -183,7 +183,7 @@ function StatCard({
       tabIndex={disabled ? undefined : 0}
       onClick={disabled ? undefined : onQuickLook}
       onKeyDown={disabled ? undefined : e => e.key === "Enter" && onQuickLook()}
-      className="cyber-card rounded-xl p-4 flex flex-col justify-between min-h-[200px]"
+      className="cyber-card rounded-xl p-4 flex flex-col justify-between min-h-[200px] overflow-hidden"
       style={{
         backgroundColor: "var(--color-surface)",
         cursor: disabled ? "default" : "pointer",
@@ -191,16 +191,16 @@ function StatCard({
         outline: "none",
       }}
     >
-      <div className="flex items-center gap-3">
-        <div className="rounded-lg p-1" style={{ backgroundColor: bg, color }}>
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="rounded-lg p-1 flex-shrink-0" style={{ backgroundColor: bg, color }}>
           {icon}
         </div>
-        <span className="font-semibold leading-none" style={{ fontSize: 30, color: "var(--color-text-muted)" }}>{label}</span>
+        <span className="font-semibold leading-tight truncate" style={{ fontSize: "clamp(0.875rem, 2.5vw, 1.875rem)", color: "var(--color-text-muted)" }}>{label}</span>
       </div>
       <div>
         <p
-          className={`font-bold leading-none truncate`}
-          style={{ fontSize: 40, color: "var(--color-text-primary)" }}
+          className="font-bold leading-none truncate overflow-hidden"
+          style={{ fontSize: "clamp(1.5rem, 3.5vw, 2.5rem)", color: "var(--color-text-primary)" }}
         >
           {primary}
         </p>

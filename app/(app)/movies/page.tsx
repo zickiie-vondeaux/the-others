@@ -120,6 +120,14 @@ export default function MoviesPage() {
   function watchedCount(movieId: string) { return allStatuses.filter(r => r.movie_id === movieId && r.status === "watched").length; }
   function wantCount(movieId: string) { return allStatuses.filter(r => r.movie_id === movieId && r.status === "want_to_watch").length; }
 
+  async function deleteMovie(movieId: string) {
+    const supabase = createClient();
+    await supabase.from("user_movie_status").delete().eq("movie_id", movieId);
+    await supabase.from("poll_options").delete().eq("movie_id", movieId);
+    await supabase.from("movies").delete().eq("id", movieId);
+    fetchData();
+  }
+
   const allGenres = Array.from(new Set(movies.flatMap(m => m.genres))).sort();
   const queueMovies = movies.filter(m => m.group_status === "queue");
   const activePolls = polls.filter(p => !p.is_closed);
@@ -268,7 +276,8 @@ export default function MoviesPage() {
               {filteredMovies.map(movie => (
                 <MovieCard key={movie.id} movie={movie} myStatus={myStatusForMovie(movie.id)}
                   watchedCount={watchedCount(movie.id)} wantCount={wantCount(movie.id)}
-                  totalMembers={profiles.length} onClick={() => setSelectedMovie(movie)} />
+                  totalMembers={profiles.length} onClick={() => setSelectedMovie(movie)}
+                  onDelete={() => deleteMovie(movie.id)} />
               ))}
             </div>
           ) : (
@@ -361,7 +370,7 @@ function ListRow({ movie, myStatus, watchedCount, wantCount, totalMembers, onCli
     <button onClick={onClick} className="w-full flex items-center gap-4 p-3 rounded-xl border text-left hover:bg-white/5 transition-colors"
       style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
       <div className="w-8 h-12 rounded overflow-hidden flex-shrink-0" style={{ backgroundColor: "var(--color-surface-elevated)" }}>
-        {movie.poster_url ? <img src={movie.poster_url} alt={movie.title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Film size={12} style={{ color: "var(--color-text-muted)" }} /></div>}
+        {movie.poster_url ? <img src={movie.poster_url} alt={movie.title} referrerPolicy="no-referrer" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Film size={12} style={{ color: "var(--color-text-muted)" }} /></div>}
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-sm truncate" style={{ color: "var(--color-text-primary)" }}>{movie.title}</p>

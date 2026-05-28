@@ -110,6 +110,7 @@ export function GameDetailModal({
   async function deleteGame() {
     setDeleting(true);
     const supabase = createClient();
+    await supabase.from("user_game_status").delete().eq("game_id", game.id);
     await supabase.from("games").delete().eq("id", game.id);
     setDeleting(false);
     onDelete?.();

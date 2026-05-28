@@ -1,6 +1,6 @@
 "use client";
 
-import { Film, Users, Star, Clock } from "lucide-react";
+import { Film, Users, Star, Clock, Trash2 } from "lucide-react";
 import { GROUP_MOVIE_STATUS_META, type Movie, type PersonalMovieStatus } from "@/lib/supabase/types";
 
 interface Props {
@@ -10,9 +10,10 @@ interface Props {
   wantCount: number;
   totalMembers: number;
   onClick: () => void;
+  onDelete?: () => void;
 }
 
-export function MovieCard({ movie, myStatus, watchedCount, wantCount, totalMembers, onClick }: Props) {
+export function MovieCard({ movie, myStatus, watchedCount, wantCount, totalMembers, onClick, onDelete }: Props) {
   const statusMeta = GROUP_MOVIE_STATUS_META[movie.group_status];
 
   return (
@@ -32,8 +33,20 @@ export function MovieCard({ movie, myStatus, watchedCount, wantCount, totalMembe
       {/* Poster */}
       <div className="relative aspect-[2/3] overflow-hidden" style={{ backgroundColor: "var(--color-surface-elevated)" }}>
         {movie.poster_url
-          ? <img src={movie.poster_url} alt={movie.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+          ? <img src={movie.poster_url} alt={movie.title} referrerPolicy="no-referrer" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
           : <div className="w-full h-full flex items-center justify-center"><Film size={36} style={{ color: "var(--color-text-muted)" }} /></div>}
+
+        {/* Delete button */}
+        {onDelete && (
+          <button
+            onClick={e => { e.stopPropagation(); onDelete(); }}
+            className="absolute bottom-2 left-2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ backgroundColor: "rgba(0,0,0,0.6)", color: "#ef4444" }}
+            aria-label="Remove movie"
+          >
+            <Trash2 size={12} />
+          </button>
+        )}
 
         <div className="absolute top-2 left-2">
           <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: statusMeta.bg, color: statusMeta.color }}>

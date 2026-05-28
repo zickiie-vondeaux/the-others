@@ -40,7 +40,7 @@ export function GameCard({ game, myStatus, playedCount, wantCount, totalMembers,
       {/* Cover art */}
       <div className="relative aspect-[3/4] overflow-hidden" style={{ backgroundColor: "var(--color-surface-elevated)" }}>
         {game.cover_url
-          ? <img src={game.cover_url} alt={game.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+          ? <img src={game.cover_url} alt={game.title} referrerPolicy="no-referrer" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
           : <div className="w-full h-full flex items-center justify-center">
               <Gamepad2 size={36} style={{ color: "var(--color-text-muted)" }} />
             </div>

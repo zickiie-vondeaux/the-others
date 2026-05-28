@@ -91,7 +91,10 @@ export function MovieDetailModal({ movie, myUserId, myStatus, memberStatuses, to
 
   async function deleteMovie() {
     setDeleting(true);
-    await createClient().from("movies").delete().eq("id", movie.id);
+    const supabase = createClient();
+    await supabase.from("user_movie_status").delete().eq("movie_id", movie.id);
+    await supabase.from("poll_options").delete().eq("movie_id", movie.id);
+    await supabase.from("movies").delete().eq("id", movie.id);
     setDeleting(false);
     onDelete?.(); onClose();
   }
