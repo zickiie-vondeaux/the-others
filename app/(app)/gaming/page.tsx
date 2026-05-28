@@ -401,11 +401,27 @@ export default function GamingPage() {
       {selectMode && (
         <div className="fixed bottom-0 inset-x-0 z-40 flex items-center justify-between px-8 py-4 border-t"
           style={{ backgroundColor: "var(--color-surface-elevated)", borderColor: "var(--color-border)" }}>
-          <p className="text-sm font-medium" style={{ color: "var(--color-text-secondary)" }}>
-            {selectedIds.size > 0
-              ? `${selectedIds.size} game${selectedIds.size !== 1 ? "s" : ""} selected`
-              : "Tap games to select them"}
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-sm font-medium" style={{ color: "var(--color-text-secondary)" }}>
+              {selectedIds.size > 0
+                ? `${selectedIds.size} game${selectedIds.size !== 1 ? "s" : ""} selected`
+                : "Tap games to select"}
+            </p>
+            <button
+              onClick={() => {
+                const allIds = filteredGames.map(g => g.id);
+                const allSelected = allIds.every(id => selectedIds.has(id));
+                if (allSelected) {
+                  setSelectedIds(new Set());
+                } else {
+                  setSelectedIds(new Set(allIds));
+                }
+              }}
+              className="text-xs transition-colors"
+              style={{ color: "var(--color-cyan)" }}>
+              {filteredGames.every(g => selectedIds.has(g.id)) ? "Deselect all" : "Select all"}
+            </button>
+          </div>
           <div className="flex items-center gap-3">
             <button onClick={exitSelectMode}
               className="px-4 py-2 rounded-xl border text-sm transition-colors hover:bg-white/5"
