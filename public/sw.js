@@ -1,4 +1,4 @@
-const CACHE = "the-others-v1";
+const CACHE = "the-others-v2";
 const OFFLINE_URL = "/offline";
 
 const PRECACHE = [

@@ -15,16 +15,20 @@ interface Props {
 
 export function MovieCard({ movie, myRating, avgRating, ratingCount, onClick, onDelete }: Props) {
   return (
-    <button onClick={onClick}
-      className="group relative rounded-xl border overflow-hidden text-left transition-all duration-200 hover:scale-[1.02]"
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") onClick(); }}
+      className="group relative rounded-xl border overflow-hidden text-left transition-all duration-200 hover:scale-[1.02] cursor-pointer"
       style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}
       onMouseEnter={e => {
-        (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 0 20px rgba(6,182,212,0.2)";
-        (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(6,182,212,0.4)";
+        (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 20px rgba(6,182,212,0.2)";
+        (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(6,182,212,0.4)";
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
-        (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--color-border)";
+        (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+        (e.currentTarget as HTMLDivElement).style.borderColor = "var(--color-border)";
       }}
     >
       {/* Poster */}
@@ -90,6 +94,6 @@ export function MovieCard({ movie, myRating, avgRating, ratingCount, onClick, on
           )}
         </div>
       </div>
-    </button>
+    </div>
   );
 }

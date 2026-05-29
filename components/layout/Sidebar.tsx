@@ -51,7 +51,7 @@ export function Sidebar() {
   };
 
   return (
-    <>
+    <div suppressHydrationWarning style={{ display: "contents" }}>
       {/* Floating re-open button when sidebar is hidden */}
       {!open && (
         <button
@@ -227,6 +227,6 @@ export function Sidebar() {
         </Link>
       </nav>
     </aside>
-    </>
+    </div>
   );
 }
