@@ -1,4 +1,14 @@
-export type Role = "member" | "moderator" | "super_admin";
+import type { Role } from "@/lib/roles";
+export type { Role } from "@/lib/roles";
+export { ROLE_DISPLAY, ROLE_TIER, PERMISSIONS, hasPermission } from "@/lib/roles";
+
+export interface PrivacySettings {
+  bio: boolean;
+  personality: boolean;
+  favorites: boolean;
+  activity: boolean;
+  steam: boolean;
+}
 
 export interface Profile {
   id: string;
@@ -22,6 +32,7 @@ export interface Profile {
   onboarding_complete: boolean;
   created_at: string;
   last_active_at: string;
+  privacy_settings: PrivacySettings | null;
 }
 
 export const PLATFORMS = ["PC", "macOS", "PS5", "Xbox", "Switch", "Mobile"] as const;

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { TopBar } from "@/components/layout/TopBar";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { PLATFORMS } from "@/lib/supabase/types";
-import { Pencil, Gamepad2, Film, Utensils, Music, MapPin, Calendar } from "lucide-react";
+import { Pencil, Gamepad2, Film, Utensils, Music, MapPin, Calendar, EyeOff, Shield } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ALL_ACHIEVEMENTS, ACHIEVEMENT_MAP } from "@/lib/achievements";
@@ -44,11 +44,18 @@ export default function ProfilePage() {
           {/* Hero card */}
           <div className="rounded-2xl border p-6 relative"
             style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
-            <Link href="/profile/edit"
-              className="absolute top-4 right-4 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-all hover:border-purple-500/60"
-              style={{ borderColor: "var(--color-border)", color: "var(--color-text-secondary)" }}>
-              <Pencil size={12} /> Edit
-            </Link>
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+              <Link href="/profile/privacy"
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-all hover:border-purple-500/60"
+                style={{ borderColor: "var(--color-border)", color: "var(--color-text-secondary)" }}>
+                <Shield size={12} /> Privacy
+              </Link>
+              <Link href="/profile/edit"
+                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-all hover:border-purple-500/60"
+                style={{ borderColor: "var(--color-border)", color: "var(--color-text-secondary)" }}>
+                <Pencil size={12} /> Edit
+              </Link>
+            </div>
 
             <div className="flex gap-6">
               {/* Left 30%: Avatar + Identity */}
@@ -79,9 +86,19 @@ export default function ProfilePage() {
               {/* Right 70%: Bio + Meta */}
               <div className="flex-1 min-w-0 flex flex-col justify-between gap-4">
                 {profile.bio ? (
-                  <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
-                    {profile.bio}
-                  </p>
+                  <div>
+                    <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+                      {profile.bio}
+                    </p>
+                    {profile.privacy_settings?.bio === false && (
+                      <span
+                        className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full mt-1.5"
+                        style={{ backgroundColor: "rgba(139,92,246,0.15)", color: "var(--color-purple-light)" }}
+                      >
+                        <EyeOff size={9} /> Only you can see this
+                      </span>
+                    )}
+                  </div>
                 ) : (
                   <span />
                 )}
@@ -135,7 +152,7 @@ export default function ProfilePage() {
 
           {/* Favorites */}
           {hasAnyFavorite(profile) && (
-            <Section title="Favorites">
+            <Section title="Favorites" hidden={profile.privacy_settings?.favorites === false}>
               <div className="grid grid-cols-2 gap-3">
                 {profile.favorite_game && <FavCard icon={<Gamepad2 size={14} />} label="Game" value={profile.favorite_game} />}
                 {profile.favorite_movie && <FavCard icon={<Film size={14} />} label="Movie" value={profile.favorite_movie} />}
@@ -153,7 +170,7 @@ export default function ProfilePage() {
           )}
 
           {/* Personality results */}
-          <Section title="Personality" action={{ label: "Take tests", href: "/personality" }}>
+          <Section title="Personality" action={{ label: "Take tests", href: "/personality" }} hidden={profile.privacy_settings?.personality === false}>
             {personalityResults.length === 0 ? (
               <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
                 No results yet. Head to the Personality Corner to take your first test.
@@ -204,21 +221,32 @@ export default function ProfilePage() {
   );
 }
 
-function Section({ title, children, action }: {
+function Section({ title, children, action, hidden }: {
   title: string;
   children: React.ReactNode;
   action?: { label: string; href: string };
+  hidden?: boolean;
 }) {
   return (
     <div className="rounded-2xl border p-5"
       style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-bold uppercase tracking-wider" style={{
-          color: "var(--color-cyan)",
-          textShadow: "0 0 8px rgba(0, 255, 234, 0.45)",
-        }}>
-          {title}
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-bold uppercase tracking-wider" style={{
+            color: "var(--color-cyan)",
+            textShadow: "0 0 8px rgba(0, 255, 234, 0.45)",
+          }}>
+            {title}
+          </h2>
+          {hidden && (
+            <span
+              className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: "rgba(139,92,246,0.15)", color: "var(--color-purple-light)" }}
+            >
+              <EyeOff size={9} /> Only you can see this
+            </span>
+          )}
+        </div>
         {action && (
           <Link href={action.href} className="text-xs font-medium" style={{ color: "var(--color-purple)" }}>
             {action.label} →

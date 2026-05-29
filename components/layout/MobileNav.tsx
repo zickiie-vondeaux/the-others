@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, Gamepad2, Film, Brain } from "lucide-react";
+import { Home, Gamepad2, Film, Brain, Users } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 const navItems = [
-  { href: "/group", label: "Group", icon: Home },
-  { href: "/calendar", label: "Calendar", icon: Calendar },
-  { href: "/gaming", label: "Gaming", icon: Gamepad2 },
-  { href: "/movies", label: "Movies", icon: Film },
-  { href: "/personality", label: "Personality", icon: Brain },
+  { href: "/group",       label: "Group",       icon: Home     },
+  { href: "/gaming",      label: "Gaming",      icon: Gamepad2 },
+  { href: "/movies",      label: "Movies",      icon: Film     },
+  { href: "/members",     label: "Members",     icon: Users    },
+  { href: "/personality", label: "Personality", icon: Brain    },
 ];
 
 export function MobileNav() {

@@ -9,6 +9,7 @@ import {
   Gamepad2,
   Film,
   Brain,
+  Users,
   User,
   Bell,
   Settings,
@@ -20,11 +21,12 @@ import {
 import { cn } from "@/lib/utils/cn";
 
 const navItems = [
-  { href: "/group", label: "Group Corner", icon: Home },
-  { href: "/calendar", label: "Calendar", icon: Calendar },
-  { href: "/gaming", label: "Gaming Library", icon: Gamepad2 },
-  { href: "/movies", label: "Movie Library", icon: Film },
-  { href: "/personality", label: "Personality", icon: Brain },
+  { href: "/group",       label: "Group Corner",   icon: Home      },
+  { href: "/calendar",   label: "Calendar",        icon: Calendar  },
+  { href: "/gaming",     label: "Gaming Library",  icon: Gamepad2  },
+  { href: "/movies",     label: "Movie Library",   icon: Film      },
+  { href: "/personality",label: "Personality",     icon: Brain     },
+  { href: "/members",    label: "Members",         icon: Users     },
 ];
 
 const bottomItems = [
