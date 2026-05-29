@@ -42,7 +42,7 @@ export default function MoviesPage() {
   const [profiles, setProfiles] = useState<Pick<Profile, "id" | "display_name" | "avatar_url" | "username">[]>([]);
   const [polls, setPolls] = useState<PollWithData[]>([]);
   const [myUserId, setMyUserId] = useState("");
-  const [myRole, setMyRole] = useState("member");
+  const [myRole, setMyRole] = useState<import("@/lib/roles").Role>("unnamed");
   const [loading, setLoading] = useState(true);
 
   const [tab, setTab] = useState<Tab>("all");
@@ -77,7 +77,7 @@ export default function MoviesPage() {
     if (user) {
       setMyUserId(user.id);
       const me = profilesData?.find(p => p.id === user.id);
-      if (me) setMyRole((me as Profile).role ?? "member");
+      if (me) setMyRole(((me as Profile).role ?? "unnamed") as import("@/lib/roles").Role);
     }
 
     const movieList = (moviesData ?? []) as Movie[];
@@ -127,10 +127,7 @@ export default function MoviesPage() {
   }
 
   async function deleteMovie(movieId: string) {
-    const supabase = createClient();
-    await supabase.from("movie_reviews").delete().eq("movie_id", movieId);
-    await supabase.from("poll_options").delete().eq("movie_id", movieId);
-    await supabase.from("movies").delete().eq("id", movieId);
+    await fetch(`/api/movies?id=${movieId}`, { method: "DELETE" });
     fetchData();
   }
 
@@ -334,7 +331,7 @@ export default function MoviesPage() {
           myReview={myReviewForMovie(selectedMovie.id)}
           memberReviews={memberReviewsForMovie(selectedMovie.id)}
           totalMembers={profiles.length}
-          isAdmin={myRole === "super_admin" || myRole === "moderator"}
+          isAdmin={myRole === "watcher" || myRole === "chaos"}
           onClose={() => setSelectedMovie(null)} onUpdated={() => { fetchData(); }}
           onDelete={() => { setSelectedMovie(null); fetchData(); }} />
       )}

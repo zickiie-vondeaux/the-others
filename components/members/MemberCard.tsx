@@ -26,7 +26,7 @@ export interface MemberRow {
 }
 
 const ROLE_GRADIENT: Record<Role, string> = {
-  origin:   "linear-gradient(135deg, #7F77DD, #5b54c2)",
+  chaos:    "linear-gradient(135deg, #7F77DD, #5b54c2)",
   watcher:  "linear-gradient(135deg, #1D9E75, #14735a)",
   ascended: "linear-gradient(135deg, #D4537E, #a83d60)",
   wanderer: "linear-gradient(135deg, #BA7517, #8a5510)",
@@ -34,7 +34,7 @@ const ROLE_GRADIENT: Record<Role, string> = {
 };
 
 const ROLE_FLIP_COLOR: Record<Role, string> = {
-  origin:   "#7F77DD",
+  chaos:    "#7F77DD",
   watcher:  "#1D9E75",
   ascended: "#D4537E",
   wanderer: "#BA7517",

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
+  const code    = searchParams.get("code");
+  const codeId  = searchParams.get("codeId");
 
   if (code) {
     const supabase = await createClient();
@@ -13,6 +15,16 @@ export async function GET(request: Request) {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
+        // Mark invite code as used
+        if (codeId) {
+          const admin = createAdminClient();
+          await admin
+            .from("invite_codes")
+            .update({ status: "used", used_by: user.id, used_at: new Date().toISOString() })
+            .eq("id", codeId)
+            .eq("status", "active");
+        }
+
         const { data: profile } = await supabase
           .from("profiles")
           .select("onboarding_complete")

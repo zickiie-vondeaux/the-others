@@ -3,16 +3,46 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+type Step = "invite" | "auth";
+
 export default function LoginPage() {
-  const [loading, setLoading] = useState<"google" | "discord" | null>(null);
+  const [step, setStep]           = useState<Step>("invite");
+  const [code, setCode]           = useState("");
+  const [codeId, setCodeId]       = useState<string | null>(null);
+  const [codeError, setCodeError] = useState("");
+  const [checking, setChecking]   = useState(false);
+  const [loading, setLoading]     = useState<"google" | "discord" | null>(null);
+
+  async function handleCodeSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!code.trim()) return;
+    setChecking(true);
+    setCodeError("");
+
+    const res = await fetch("/api/invites/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: code.trim() }),
+    });
+    const json = await res.json();
+    setChecking(false);
+
+    if (json.valid) {
+      setCodeId(json.codeId);
+      setStep("auth");
+    } else {
+      setCodeError("This invite code is invalid or has already been used.");
+    }
+  }
 
   async function signInWith(provider: "google" | "discord") {
     setLoading(provider);
     const supabase = createClient();
+    const params = codeId ? `?codeId=${codeId}` : "";
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${location.origin}/api/auth/callback`,
+        redirectTo: `${location.origin}/api/auth/callback${params}`,
       },
     });
     setLoading(null);
@@ -25,38 +55,83 @@ export default function LoginPage() {
         Apparently we&apos;re just acquaintances. Their loss.
       </p>
 
-      <div className="space-y-3">
-        <button
-          onClick={() => signInWith("google")}
-          disabled={loading !== null}
-          className="neon-btn-primary w-full flex items-center justify-center gap-3 py-3 px-4 text-sm disabled:opacity-50"
-        >
-          {loading === "google" ? (
-            <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
-          ) : (
-            <GoogleIcon />
-          )}
-          Continue with Google
-        </button>
-
-        <button
-          onClick={() => signInWith("discord")}
-          disabled={loading !== null}
-          className="neon-btn-outline w-full flex items-center justify-center gap-3 py-3 px-4 text-sm disabled:opacity-50"
-        >
-          {loading === "discord" ? (
-            <span className="animate-spin w-4 h-4 border-2 border-current/30 border-t-current rounded-full" />
-          ) : (
-            <DiscordIcon />
-          )}
-          Continue with Discord
-        </button>
-      </div>
-
-      <p className="text-xs mt-6" style={{ color: "#00ffea66" }}>
-        No invite? You&apos;re probably still an acquaintance.{" "}
-        <span style={{ color: "#ec4899" }}>Ask Zickiie.</span>
-      </p>
+      {step === "invite" ? (
+        <form onSubmit={handleCodeSubmit} className="space-y-3">
+          <div className="text-left">
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: "#00ffea88" }}>
+              Invite Code
+            </label>
+            <input
+              type="text"
+              value={code}
+              onChange={e => { setCode(e.target.value.toUpperCase()); setCodeError(""); }}
+              placeholder="e.g. THE5X9KQ"
+              maxLength={8}
+              autoFocus
+              className="w-full px-4 py-3 rounded-xl border bg-transparent text-center text-lg font-mono tracking-widest outline-none transition-colors"
+              style={{
+                borderColor: codeError ? "#ec4899" : "rgba(0,255,234,0.3)",
+                color: "var(--color-text-primary)",
+              }}
+            />
+            {codeError && (
+              <p className="text-xs mt-1.5" style={{ color: "#ec4899" }}>{codeError}</p>
+            )}
+          </div>
+          <button
+            type="submit"
+            disabled={!code.trim() || checking}
+            className="neon-btn-primary w-full py-3 text-sm disabled:opacity-50"
+          >
+            {checking ? (
+              <span className="animate-spin inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+            ) : (
+              "Verify Code"
+            )}
+          </button>
+          <p className="text-xs mt-4" style={{ color: "#00ffea66" }}>
+            No invite? You&apos;re probably still an acquaintance.{" "}
+            <span style={{ color: "#ec4899" }}>Ask Zickiie.</span>
+          </p>
+        </form>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-xs mb-4" style={{ color: "#1D9E75" }}>
+            ✓ Invite code accepted. Choose how to sign in.
+          </p>
+          <button
+            onClick={() => signInWith("google")}
+            disabled={loading !== null}
+            className="neon-btn-primary w-full flex items-center justify-center gap-3 py-3 px-4 text-sm disabled:opacity-50"
+          >
+            {loading === "google" ? (
+              <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+            ) : (
+              <GoogleIcon />
+            )}
+            Continue with Google
+          </button>
+          <button
+            onClick={() => signInWith("discord")}
+            disabled={loading !== null}
+            className="neon-btn-outline w-full flex items-center justify-center gap-3 py-3 px-4 text-sm disabled:opacity-50"
+          >
+            {loading === "discord" ? (
+              <span className="animate-spin w-4 h-4 border-2 border-current/30 border-t-current rounded-full" />
+            ) : (
+              <DiscordIcon />
+            )}
+            Continue with Discord
+          </button>
+          <button
+            onClick={() => { setStep("invite"); setCode(""); setCodeId(null); }}
+            className="text-xs underline mt-2"
+            style={{ color: "#00ffea66" }}
+          >
+            Use a different code
+          </button>
+        </div>
+      )}
     </div>
   );
 }

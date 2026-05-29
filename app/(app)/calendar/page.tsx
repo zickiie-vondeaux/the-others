@@ -25,7 +25,7 @@ export default function CalendarPage() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [userId, setUserId] = useState("");
-  const [userRole, setUserRole] = useState("member");
+  const [userRole, setUserRole] = useState<import("@/lib/roles").Role>("unnamed");
   const [view, setView] = useState<View>("month");
   const [direction, setDirection] = useState(1);
 

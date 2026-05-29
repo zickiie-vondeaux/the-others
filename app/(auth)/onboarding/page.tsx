@@ -100,21 +100,20 @@ export default function OnboardingPage() {
   async function finish() {
     setSaving(true);
     setError("");
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.replace("/login"); return; }
 
-    const { error: err } = await supabase.from("profiles").upsert({
-      id: user.id,
-      ...form,
-      onboarding_complete: true,
+    const res = await fetch("/api/onboarding/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
     });
 
-    if (err) {
-      if (err.message.includes("unique") || err.code === "23505") {
+    const data = await res.json();
+
+    if (!res.ok) {
+      if (data.error === "username_taken") {
         setError("That username is taken. Go back and pick a different one.");
       } else {
-        setError(err.message);
+        setError(data.error || "Something went wrong.");
       }
       setSaving(false);
       return;

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { TopBar } from "@/components/layout/TopBar";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { PLATFORMS } from "@/lib/supabase/types";
-import { Pencil, Gamepad2, Film, Utensils, Music, MapPin, Calendar, EyeOff, Shield } from "lucide-react";
+import { Pencil, Gamepad2, Film, Utensils, Music, MapPin, Calendar, EyeOff, Shield, Copy, Check, Link2 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ALL_ACHIEVEMENTS, ACHIEVEMENT_MAP } from "@/lib/achievements";
@@ -215,9 +215,79 @@ export default function ProfilePage() {
             />
           </Section>
 
+          {/* Invite Code — wanderer only */}
+          {profile.role === "wanderer" && <InviteCodeSection userId={profile.id} />}
+
         </div>
       </div>
     </>
+  );
+}
+
+function InviteCodeSection({ userId }: { userId: string }) {
+  const [code, setCode]   = useState<{ id: string; code: string; status: string; used_at: string | null } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied]   = useState(false);
+
+  useEffect(() => {
+    fetch("/api/invites?self=1")
+      .then(r => r.json())
+      .then((data: unknown[]) => {
+        const arr = Array.isArray(data) ? data as { id: string; code: string; status: string; used_at: string | null }[] : [];
+        const active = arr.find(c => c.status === "active") ?? arr[0] ?? null;
+        setCode(active);
+        setLoading(false);
+      });
+  }, [userId]);
+
+  function copy() {
+    if (!code) return;
+    navigator.clipboard.writeText(code.code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <Section title="Invite Code">
+      {loading ? (
+        <div className="h-8 animate-pulse rounded-lg" style={{ backgroundColor: "var(--color-surface-elevated)" }} />
+      ) : !code ? (
+        <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>No invite code available.</p>
+      ) : (
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl border"
+            style={{ backgroundColor: "var(--color-bg)", borderColor: "var(--color-border)" }}>
+            <Link2 size={14} style={{ color: "var(--color-cyan)" }} />
+            <span className="font-mono font-bold tracking-widest text-base" style={{ color: "var(--color-text-primary)" }}>
+              {code.code}
+            </span>
+          </div>
+          <span className="text-xs px-2 py-1 rounded-full font-medium"
+            style={{
+              backgroundColor: code.status === "active" ? "rgba(29,158,117,0.15)" : code.status === "used" ? "rgba(136,135,128,0.15)" : "rgba(236,72,153,0.15)",
+              color: code.status === "active" ? "#1D9E75" : code.status === "used" ? "#888780" : "#ec4899",
+            }}>
+            {code.status === "active" ? "Active" : code.status === "used" ? "Used" : "Revoked"}
+          </span>
+          {code.status === "active" && (
+            <button onClick={copy}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-colors"
+              style={{ backgroundColor: "rgba(0,255,234,0.1)", color: "var(--color-cyan)", border: "1px solid rgba(0,255,234,0.3)" }}>
+              {copied ? <Check size={12} /> : <Copy size={12} />}
+              {copied ? "Copied!" : "Copy"}
+            </button>
+          )}
+          {code.status === "used" && (
+            <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+              Your invite was used{code.used_at ? ` on ${new Date(code.used_at).toLocaleDateString()}` : ""}.
+            </p>
+          )}
+          {code.status === "revoked" && (
+            <p className="text-xs" style={{ color: "#ec4899" }}>Your invite code was revoked.</p>
+          )}
+        </div>
+      )}
+    </Section>
   );
 }
 

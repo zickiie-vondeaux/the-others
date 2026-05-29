@@ -19,7 +19,7 @@ const ROLE_FILTER_OPTIONS: { id: RoleFilter; label: string }[] = [
   { id: "watcher",  label: ROLE_DISPLAY.watcher  },
 ];
 
-const MEMBER_ROLES: Role[] = ["wanderer", "ascended", "watcher", "origin"];
+const MEMBER_ROLES: Role[] = ["wanderer", "ascended", "watcher", "chaos"];
 
 export default function MembersPage() {
   const [myId, setMyId]     = useState("");

@@ -83,7 +83,7 @@ export function EventDetailModal({ event, userId, userRole, onClose, onDeleted }
 
   const canDelete = !isBday && (
     ("created_by" in event && event.created_by === userId) ||
-    userRole === "super_admin" || userRole === "moderator"
+    userRole === "watcher" || userRole === "chaos"
   );
 
   return (

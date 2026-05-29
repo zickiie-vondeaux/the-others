@@ -56,7 +56,7 @@ export default function GamingPage() {
   const [allReviews, setAllReviews] = useState<GameReviewRow[]>([]);
   const [profiles, setProfiles] = useState<Pick<Profile, "id" | "display_name" | "avatar_url" | "username">[]>([]);
   const [myUserId, setMyUserId] = useState("");
-  const [myRole, setMyRole] = useState("member");
+  const [myRole, setMyRole] = useState<import("@/lib/roles").Role>("unnamed");
   const [mySteamId, setMySteamId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -100,7 +100,7 @@ export default function GamingPage() {
       setMyUserId(user.id);
       const me = profilesData?.find(p => p.id === user.id);
       if (me) {
-        setMyRole((me as Profile).role ?? "member");
+        setMyRole(((me as Profile).role ?? "unnamed") as import("@/lib/roles").Role);
         setMySteamId((me as Profile).steam_id ?? null);
       }
     }
@@ -137,7 +137,7 @@ export default function GamingPage() {
   }
 
   function canDelete(game: Game): boolean {
-    return myRole === "super_admin" || myRole === "moderator" || game.added_by === myUserId;
+    return myRole === "watcher" || myRole === "chaos" || game.added_by === myUserId;
   }
 
   async function runDelete(ids: string[]) {
@@ -496,7 +496,7 @@ export default function GamingPage() {
           myReview={myReviewForGame(selectedGame.id)}
           memberReviews={memberReviewsForGame(selectedGame.id)}
           totalMembers={profiles.length}
-          isAdmin={myRole === "super_admin" || myRole === "moderator"}
+          isAdmin={myRole === "watcher" || myRole === "chaos"}
           onClose={() => setSelectedGame(null)}
           onUpdated={() => { fetchData(); }}
           onDelete={() => { setSelectedGame(null); fetchData(); }}

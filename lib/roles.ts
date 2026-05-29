@@ -1,7 +1,7 @@
-export type Role = "origin" | "watcher" | "ascended" | "wanderer" | "unnamed";
+export type Role = "chaos" | "watcher" | "ascended" | "wanderer" | "unnamed";
 
 export const ROLE_DISPLAY: Record<Role, string> = {
-  origin:   "The Origin",
+  chaos:    "Chaos",
   watcher:  "The Watchers",
   ascended: "Ascended",
   wanderer: "Wanderer",
@@ -14,7 +14,7 @@ export const ROLE_TIER: Record<Role, number> = {
   wanderer: 1,
   ascended: 2,
   watcher:  3,
-  origin:   4,
+  chaos:    4,
 };
 
 export const PERMISSIONS = {
@@ -82,13 +82,13 @@ const PERMISSION_MIN_TIER: Record<Permission, number> = {
   [PERMISSIONS.DELETE_ANY_CARD]:       ROLE_TIER.watcher,
   [PERMISSIONS.MODERATE_COMMENTS]:     ROLE_TIER.watcher,
   [PERMISSIONS.ACCESS_ADMIN_PANEL]:    ROLE_TIER.watcher,
-  [PERMISSIONS.EDIT_METADATA]:         ROLE_TIER.origin,
-  [PERMISSIONS.APP_SETTINGS]:          ROLE_TIER.origin,
-  [PERMISSIONS.INTEGRATIONS_BILLING]:  ROLE_TIER.origin,
-  [PERMISSIONS.FULL_ANALYTICS]:        ROLE_TIER.origin,
-  [PERMISSIONS.ASSIGN_REVOKE_ROLES]:   ROLE_TIER.origin,
-  [PERMISSIONS.OVERRIDE_MODERATION]:   ROLE_TIER.origin,
-  [PERMISSIONS.FULL_ADMIN_PANEL]:      ROLE_TIER.origin,
+  [PERMISSIONS.EDIT_METADATA]:         ROLE_TIER.chaos,
+  [PERMISSIONS.APP_SETTINGS]:          ROLE_TIER.chaos,
+  [PERMISSIONS.INTEGRATIONS_BILLING]:  ROLE_TIER.chaos,
+  [PERMISSIONS.FULL_ANALYTICS]:        ROLE_TIER.chaos,
+  [PERMISSIONS.ASSIGN_REVOKE_ROLES]:   ROLE_TIER.chaos,
+  [PERMISSIONS.OVERRIDE_MODERATION]:   ROLE_TIER.chaos,
+  [PERMISSIONS.FULL_ADMIN_PANEL]:      ROLE_TIER.chaos,
 };
 
 export function hasPermission(role: Role, permission: Permission): boolean {
@@ -101,30 +101,30 @@ export function canPromote(
   targetCurrentRole: Role,
   targetNewRole: Role,
 ): boolean {
-  // Origin is non-transferable
-  if (targetNewRole === "origin") return false;
+  // Chaos is non-transferable
+  if (targetNewRole === "chaos") return false;
 
   // Actor must be strictly above both current and new role
   if (ROLE_TIER[actorRole] <= ROLE_TIER[targetCurrentRole]) return false;
   if (ROLE_TIER[actorRole] <= ROLE_TIER[targetNewRole]) return false;
 
-  // wanderer → ascended: watcher or origin only
+  // wanderer → ascended: watcher or chaos only
   if (targetCurrentRole === "wanderer" && targetNewRole === "ascended") {
-    return actorRole === "watcher" || actorRole === "origin";
+    return actorRole === "watcher" || actorRole === "chaos";
   }
 
-  // ascended → watcher: origin only
+  // ascended → watcher: chaos only
   if (targetCurrentRole === "ascended" && targetNewRole === "watcher") {
-    return actorRole === "origin";
+    return actorRole === "chaos";
   }
 
-  // All other upward promotions: origin only
-  return actorRole === "origin";
+  // All other upward promotions: chaos only
+  return actorRole === "chaos";
 }
 
 // Can actorRole revoke/demote targetRole?
 export function canRevoke(actorRole: Role, targetRole: Role): boolean {
-  if (targetRole === "origin") return false;
+  if (targetRole === "chaos") return false;
   return ROLE_TIER[actorRole] > ROLE_TIER[targetRole];
 }
 

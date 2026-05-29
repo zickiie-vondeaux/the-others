@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { searchGames, getGame } from "@/lib/rawg";
+import { canDeleteCard, type Role } from "@/lib/roles";
+import { createCardRemovedNotification } from "@/lib/notifications";
 
 export async function GET(req: NextRequest) {
   const supabase = await createClient();
@@ -52,14 +54,15 @@ export async function DELETE(req: NextRequest) {
 
   if (!game) return NextResponse.json({ error: "Game not found", detail: gameErr?.message }, { status: 404 });
 
-  const canDelete =
-    profile?.role === "super_admin" ||
-    profile?.role === "moderator" ||
-    game.added_by === user.id;
+  const { allowed, isModeratorAction } = canDeleteCard(
+    profile?.role as Role,
+    user.id,
+    game.added_by,
+  );
 
-  console.log("[DELETE /api/games] canDelete:", canDelete, "role:", profile?.role, "added_by:", game.added_by);
+  console.log("[DELETE /api/games] allowed:", allowed, "isModeratorAction:", isModeratorAction, "role:", profile?.role, "added_by:", game.added_by);
 
-  if (!canDelete) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { error: reviewsErr } = await admin.from("game_reviews").delete().eq("game_id", gameId);
   const { error: deleteErr } = await admin.from("games").delete().eq("id", gameId);
@@ -68,6 +71,10 @@ export async function DELETE(req: NextRequest) {
 
   if (deleteErr) {
     return NextResponse.json({ error: deleteErr.message }, { status: 500 });
+  }
+
+  if (isModeratorAction && game.added_by) {
+    await createCardRemovedNotification(game.added_by, "game");
   }
 
   return NextResponse.json({ success: true });
