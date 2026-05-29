@@ -43,7 +43,7 @@ CREATE POLICY "profiles: admin can delete any"
   );
 
 DROP POLICY IF EXISTS "invites: admin only" ON public.invites;
-CREATE POLICY IF NOT EXISTS "invites: admin only"
+CREATE POLICY "invites: admin only"
   ON public.invites FOR ALL TO authenticated
   USING (
     EXISTS (
@@ -109,11 +109,13 @@ CREATE INDEX IF NOT EXISTS invite_codes_gen_by_idx ON public.invite_codes (gener
 ALTER TABLE public.invite_codes ENABLE ROW LEVEL SECURITY;
 
 -- Users can view their own codes
+DROP POLICY IF EXISTS "invite_codes: view own" ON public.invite_codes;
 CREATE POLICY "invite_codes: view own"
   ON public.invite_codes FOR SELECT TO authenticated
   USING (auth.uid() = generated_by);
 
 -- Watcher+ can view all codes (filtered further in application layer)
+DROP POLICY IF EXISTS "invite_codes: watcher can view all" ON public.invite_codes;
 CREATE POLICY "invite_codes: watcher can view all"
   ON public.invite_codes FOR SELECT TO authenticated
   USING (
@@ -140,6 +142,7 @@ CREATE TABLE IF NOT EXISTS public.member_badges (
 
 ALTER TABLE public.member_badges ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "member_badges: read all" ON public.member_badges;
 CREATE POLICY "member_badges: read all"
   ON public.member_badges FOR SELECT TO authenticated
   USING (true);
@@ -161,6 +164,7 @@ CREATE TABLE IF NOT EXISTS public.profile_edit_log (
 ALTER TABLE public.profile_edit_log ENABLE ROW LEVEL SECURITY;
 
 -- Chaos only
+DROP POLICY IF EXISTS "profile_edit_log: chaos only" ON public.profile_edit_log;
 CREATE POLICY "profile_edit_log: chaos only"
   ON public.profile_edit_log FOR SELECT TO authenticated
   USING (
@@ -186,6 +190,7 @@ CREATE TABLE IF NOT EXISTS public.content_flags (
 ALTER TABLE public.content_flags ENABLE ROW LEVEL SECURITY;
 
 -- Watcher+ can view flags
+DROP POLICY IF EXISTS "content_flags: watcher can view" ON public.content_flags;
 CREATE POLICY "content_flags: watcher can view"
   ON public.content_flags FOR SELECT TO authenticated
   USING (
@@ -196,6 +201,7 @@ CREATE POLICY "content_flags: watcher can view"
   );
 
 -- Ascended+ can flag content (insert)
+DROP POLICY IF EXISTS "content_flags: ascended can flag" ON public.content_flags;
 CREATE POLICY "content_flags: ascended can flag"
   ON public.content_flags FOR INSERT TO authenticated
   WITH CHECK (
