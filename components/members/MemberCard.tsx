@@ -33,6 +33,14 @@ const ROLE_GRADIENT: Record<Role, string> = {
   unnamed:  "linear-gradient(135deg, #334155, #1e293b)",
 };
 
+const ROLE_FLIP_COLOR: Record<Role, string> = {
+  origin:   "#7F77DD",
+  watcher:  "#1D9E75",
+  ascended: "#D4537E",
+  wanderer: "#BA7517",
+  unnamed:  "#334155",
+};
+
 export function MemberCard({ member, onClick }: { member: MemberRow; onClick: () => void }) {
   const [flipping, setFlipping] = useState(false);
   const showBio = (member.privacy_settings?.bio ?? true) && !!member.bio;
@@ -40,60 +48,94 @@ export function MemberCard({ member, onClick }: { member: MemberRow; onClick: ()
   function handleClick() {
     if (flipping) return;
     setFlipping(true);
+    // open modal exactly when the flip completes
     setTimeout(() => {
       onClick();
-      setTimeout(() => setFlipping(false), 50);
-    }, 180);
+      setTimeout(() => setFlipping(false), 60);
+    }, 400);
   }
 
   return (
-    <motion.button
+    <div
+      className="w-full cursor-pointer"
+      style={{ perspective: "900px" }}
       onClick={handleClick}
-      animate={flipping ? { rotateY: 90, scale: 0.92 } : { rotateY: 0, scale: 1 }}
-      transition={{ duration: 0.18, ease: "easeIn" }}
-      style={{
-        transformOrigin: "center",
-        perspective: 800,
-        backgroundColor: "var(--color-surface)",
-        borderColor: "var(--color-border)",
-      }}
-      className="w-full text-left rounded-2xl border overflow-hidden group cursor-pointer"
-      whileHover={!flipping ? { y: -3, boxShadow: "0 8px 24px rgba(139,92,246,0.2)" } : {}}
     >
-      {/* Full-width avatar area — fixed aspect ratio */}
-      <div
-        className="w-full relative overflow-hidden"
-        style={{ aspectRatio: "4/3", background: ROLE_GRADIENT[member.role] }}
+      <motion.div
+        animate={{ rotateY: flipping ? 180 : 0 }}
+        transition={{ duration: 0.4, ease: "easeInOut" }}
+        whileHover={!flipping ? { y: -3 } : {}}
+        style={{ transformStyle: "preserve-3d", position: "relative" }}
       >
-        {member.avatar_url && (
-          <img
-            src={member.avatar_url}
-            alt=""
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        )}
-        {!member.avatar_url && (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="text-6xl font-black" style={{ color: "rgba(255,255,255,0.25)" }}>
-              {member.display_name[0]?.toUpperCase()}
-            </span>
+        {/* ── FRONT ── */}
+        <div
+          className="w-full rounded-2xl border overflow-hidden"
+          style={{
+            backgroundColor: "var(--color-surface)",
+            borderColor: "var(--color-border)",
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+          }}
+        >
+          {/* Square avatar area */}
+          <div
+            className="w-full relative overflow-hidden"
+            style={{ aspectRatio: "1 / 1", background: ROLE_GRADIENT[member.role] }}
+          >
+            {member.avatar_url && (
+              <img src={member.avatar_url} alt="" className="w-full h-full object-cover" />
+            )}
+            {!member.avatar_url && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span
+                  className="font-black select-none"
+                  style={{ fontSize: "clamp(5rem, 30%, 9rem)", color: "rgba(255,255,255,0.2)", lineHeight: 1 }}
+                >
+                  {member.display_name[0]?.toUpperCase()}
+                </span>
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Info — fixed height so all cards are uniform */}
-      <div className="p-3 h-[88px] flex flex-col justify-between">
-        <div className="flex items-center justify-between gap-2">
-          <p className="font-bold text-sm truncate" style={{ color: "var(--color-text-primary)" }}>
-            {member.display_name}
-          </p>
-          <RoleBadge role={member.role} size="xs" />
+          {/* Fixed-height info bar */}
+          <div className="px-3 py-2.5 h-[72px] flex flex-col justify-center gap-1">
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-bold text-sm truncate" style={{ color: "var(--color-text-primary)" }}>
+                {member.display_name}
+              </p>
+              <RoleBadge role={member.role} size="xs" />
+            </div>
+            <p className="text-xs truncate" style={{ color: "var(--color-text-muted)" }}>
+              {showBio ? member.bio : `@${member.username}`}
+            </p>
+          </div>
         </div>
-        <p className="text-xs leading-relaxed line-clamp-2 mt-1" style={{ color: "var(--color-text-muted)" }}>
-          {showBio ? member.bio : `@${member.username}`}
-        </p>
-      </div>
-    </motion.button>
+
+        {/* ── BACK — role color ── */}
+        <div
+          className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center gap-3"
+          style={{
+            background: ROLE_GRADIENT[member.role],
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+            transform: "rotateY(180deg)",
+          }}
+        >
+          <span
+            className="font-black select-none"
+            style={{ fontSize: "clamp(5rem, 30%, 9rem)", color: "rgba(255,255,255,0.22)", lineHeight: 1 }}
+          >
+            {member.display_name[0]?.toUpperCase()}
+          </span>
+          <div className="text-center px-3">
+            <p className="font-bold text-sm text-white/80 truncate">{member.display_name}</p>
+            <div className="mt-1 flex justify-center">
+              <RoleBadge role={member.role} size="xs" />
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </div>
   );
 }
 
@@ -119,7 +161,6 @@ export function MemberListRow({ member, onClick }: { member: MemberRow; onClick:
             </div>
         }
       </div>
-
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm truncate" style={{ color: "var(--color-text-primary)" }}>
