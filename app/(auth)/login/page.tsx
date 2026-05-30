@@ -1,11 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Step = "choose" | "invite" | "auth";
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
+  const searchParams = useSearchParams();
   const [step, setStep]           = useState<Step>("choose");
   const [code, setCode]           = useState("");
   const [codeId, setCodeId]       = useState<string | null>(null);
@@ -13,6 +23,8 @@ export default function LoginPage() {
   const [checking, setChecking]   = useState(false);
   const [loading, setLoading]     = useState<"google" | "discord" | null>(null);
   const [isReturning, setIsReturning] = useState(false);
+
+  const errorParam = searchParams.get("error");
 
   async function handleCodeSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,6 +67,12 @@ export default function LoginPage() {
       <p className="text-sm mb-8" style={{ color: "#00ffea88" }}>
         Apparently we&apos;re just acquaintances. Their loss.
       </p>
+
+      {errorParam === "no_invite" && (
+        <p className="text-xs mb-4 px-3 py-2 rounded-lg" style={{ color: "#ec4899", background: "rgba(236,72,153,0.1)", border: "1px solid rgba(236,72,153,0.3)" }}>
+          That account isn&apos;t a member yet. You&apos;ll need an invite code to join.
+        </p>
+      )}
 
       {step === "choose" && (
         <div className="space-y-3">
