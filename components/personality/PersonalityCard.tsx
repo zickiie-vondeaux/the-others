@@ -72,7 +72,7 @@ export function PersonalityCard({ result, slug, onTake, compact }: Props) {
         <img
           src={zodiacSrc(result.result_code)}
           alt={result.result_code}
-          className={compact ? "w-7 h-7" : "w-10 h-10"}
+          className={compact ? "w-9 h-9" : "w-[72px] h-[72px]"}
           style={{ filter: "drop-shadow(0 0 6px rgba(139,92,246,0.55))" }}
         />
       ) : slug === "mbti" ? (
@@ -86,7 +86,7 @@ export function PersonalityCard({ result, slug, onTake, compact }: Props) {
         <img
           src={ennSrc}
           alt={result.result_code}
-          className={compact ? "w-9 h-9" : "w-14 h-14"}
+          className={compact ? "w-9 h-9" : "w-[72px] h-[72px]"}
           style={{ filter: "drop-shadow(0 0 6px rgba(139,92,246,0.45))" }}
         />
       ) : (
