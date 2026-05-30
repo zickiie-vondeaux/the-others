@@ -11,7 +11,7 @@ const ENNEAGRAM_NAMES: Record<string, string> = {
 };
 
 export function zodiacSrc(sign: string) {
-  return `/Zodiac%20icons/${sign}.svg`;
+  return `/Zodiac%20Icons/${sign}.svg`;
 }
 
 export function mbtiSrc(code: string) {
@@ -20,5 +20,5 @@ export function mbtiSrc(code: string) {
 
 export function enneagramSrc(code: string) {
   const name = ENNEAGRAM_NAMES[code];
-  return name ? `/enneagram%20icons/Type%20${code}%20${name}.svg` : null;
+  return name ? `/Enneagram%20icons/Type%20${code}%20${name}.svg` : null;
 }
