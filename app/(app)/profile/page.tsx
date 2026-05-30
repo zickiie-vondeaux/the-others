@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { TopBar } from "@/components/layout/TopBar";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { PLATFORMS } from "@/lib/supabase/types";
-import { Pencil, Gamepad2, Film, Utensils, Music, MapPin, Calendar, EyeOff, Copy, Check, Link2 } from "lucide-react";
+import { Pencil, Gamepad2, Film, Utensils, Music, MapPin, Calendar, EyeOff, Copy, Check, Link2, Camera } from "lucide-react";
+import { AvatarPickerModal } from "@/components/profile/AvatarPickerModal";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ALL_ACHIEVEMENTS, ACHIEVEMENT_MAP } from "@/lib/achievements";
@@ -17,6 +18,8 @@ export default function ProfilePage() {
   const { profile, loading } = useCurrentUser();
   const [earnedIds, setEarnedIds] = useState<string[]>([]);
   const [personalityResults, setPersonalityResults] = useState<PersonalityResult[]>([]);
+  const [avatarUrl, setAvatarUrl] = useState<string | null | undefined>(undefined);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -48,16 +51,22 @@ export default function ProfilePage() {
             <div className="flex gap-6">
               {/* Left 30%: Avatar + Identity */}
               <div className="w-[30%] shrink-0 flex flex-col items-center text-center gap-3">
-                <div className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center text-3xl font-black text-white"
+                <button
+                  onClick={() => setShowAvatarPicker(true)}
+                  className="relative group w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center text-3xl font-black text-white shrink-0"
                   style={{ background: profile.favorite_color
                     ? `linear-gradient(135deg, ${profile.favorite_color}cc, var(--color-purple))`
                     : "linear-gradient(135deg, var(--color-purple), var(--color-cyan))"
-                  }}>
-                  {profile.avatar_url
-                    ? <img src={profile.avatar_url} alt={profile.display_name} className="w-full h-full object-cover" />
+                  }}
+                >
+                  {(avatarUrl !== undefined ? avatarUrl : profile.avatar_url)
+                    ? <img src={(avatarUrl !== undefined ? avatarUrl : profile.avatar_url)!} alt={profile.display_name} className="w-full h-full object-cover" />
                     : profile.display_name[0]?.toUpperCase()
                   }
-                </div>
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Camera size={20} className="text-white" />
+                  </div>
+                </button>
                 <div>
                   <h1 className="text-xl font-black leading-tight" style={{ color: "var(--color-text-primary)" }}>
                     {profile.display_name}
@@ -231,6 +240,18 @@ export default function ProfilePage() {
 
         </div>
       </div>
+
+      {showAvatarPicker && (
+        <AvatarPickerModal
+          userId={profile.id}
+          displayName={profile.display_name}
+          favoriteColor={profile.favorite_color}
+          personalityResults={personalityResults}
+          zodiac={zodiac}
+          onClose={() => setShowAvatarPicker(false)}
+          onSaved={url => { setAvatarUrl(url); setShowAvatarPicker(false); }}
+        />
+      )}
     </>
   );
 }
