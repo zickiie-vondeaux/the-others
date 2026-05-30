@@ -5,13 +5,15 @@ import { TopBar } from "@/components/layout/TopBar";
 import { createClient } from "@/lib/supabase/client";
 import { MemberCard, MemberListRow, type MemberRow } from "@/components/members/MemberCard";
 import { MemberProfileModal } from "@/components/members/MemberProfileModal";
-import { LayoutGrid, List, Search, X, Layers } from "lucide-react";
+import { LayoutGrid, List, Search, X } from "lucide-react";
 import type { Role } from "@/lib/roles";
 import { ROLE_DISPLAY } from "@/lib/roles";
+import { PRESET_BADGES } from "@/lib/badges";
 
 type ViewMode   = "grid" | "list";
 type RoleFilter = "all" | "chaos" | "watcher" | "ascended" | "wanderer" | "unnamed";
 type SortBy     = "newest" | "oldest" | "alpha" | "alpha-desc";
+type GroupMode  = "none" | "role" | "badge";
 
 const ROLE_FILTER_OPTIONS: { id: RoleFilter; label: string }[] = [
   { id: "all",      label: "All roles"           },
@@ -41,9 +43,9 @@ export default function MembersPage() {
   const [viewMode, setViewMode]       = useState<ViewMode>("grid");
   const [search, setSearch]           = useState("");
   const [roleFilter, setRoleFilter]   = useState<RoleFilter>("all");
-  const [sortBy, setSortBy]           = useState<SortBy>("newest");
-  const [groupByRole, setGroupByRole] = useState(false);
-  const [selected, setSelected]       = useState<MemberRow | null>(null);
+  const [sortBy, setSortBy]     = useState<SortBy>("newest");
+  const [groupMode, setGroupMode] = useState<GroupMode>("none");
+  const [selected, setSelected] = useState<MemberRow | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -63,13 +65,22 @@ export default function MembersPage() {
 
       if (role === "unnamed") { setLoading(false); return; }
 
-      const { data } = await supabase
-        .from("profiles")
-        .select("id,display_name,username,avatar_url,bio,created_at,last_active_at,role,favorite_game,favorite_movie,favorite_food,favorite_music,favorite_color,platforms,steam_id,privacy_settings")
-        .in("role", MEMBER_ROLES)
-        .order("created_at", { ascending: false });
+      const [{ data }, { data: allBadges }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id,display_name,username,avatar_url,bio,created_at,last_active_at,role,favorite_game,favorite_movie,favorite_food,favorite_music,favorite_color,platforms,steam_id,privacy_settings")
+          .in("role", MEMBER_ROLES)
+          .order("created_at", { ascending: false }),
+        supabase.from("member_badges").select("user_id,badge_slug,badge_label"),
+      ]);
 
-      setMembers((data ?? []) as MemberRow[]);
+      const badgesByUser: Record<string, { badge_slug: string; badge_label: string }[]> = {};
+      for (const b of allBadges ?? []) {
+        if (!badgesByUser[b.user_id]) badgesByUser[b.user_id] = [];
+        badgesByUser[b.user_id].push({ badge_slug: b.badge_slug, badge_label: b.badge_label });
+      }
+
+      setMembers((data ?? []).map(m => ({ ...m, badges: badgesByUser[m.id] ?? [] })) as MemberRow[]);
       setLoading(false);
     }
     load();
@@ -153,7 +164,7 @@ export default function MembersPage() {
             {/* Role filter */}
             <select
               value={roleFilter}
-              onChange={e => { setRoleFilter(e.target.value as RoleFilter); setGroupByRole(false); }}
+              onChange={e => { setRoleFilter(e.target.value as RoleFilter); setGroupMode("none"); }}
               className="px-3 py-1.5 rounded-lg border text-sm outline-none"
               style={{
                 backgroundColor: "var(--color-surface)",
@@ -182,18 +193,21 @@ export default function MembersPage() {
               ))}
             </select>
 
-            {/* Group by role toggle */}
-            <button
-              onClick={() => { setGroupByRole(g => !g); if (!groupByRole) setRoleFilter("all"); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-all"
+            {/* Group by */}
+            <select
+              value={groupMode}
+              onChange={e => { setGroupMode(e.target.value as GroupMode); if (e.target.value !== "none") setRoleFilter("all"); }}
+              className="px-3 py-1.5 rounded-lg border text-sm outline-none"
               style={{
-                backgroundColor: groupByRole ? "color-mix(in srgb, var(--color-purple) 15%, transparent)" : "var(--color-surface)",
-                borderColor: groupByRole ? "var(--color-purple)" : "var(--color-border)",
-                color: groupByRole ? "var(--color-purple-light)" : "var(--color-text-secondary)",
+                backgroundColor: "var(--color-surface)",
+                borderColor: groupMode !== "none" ? "var(--color-purple)" : "var(--color-border)",
+                color: groupMode !== "none" ? "var(--color-purple-light)" : "var(--color-text-secondary)",
               }}
             >
-              <Layers size={13} /> Group
-            </button>
+              <option value="none">No grouping</option>
+              <option value="role">Group by role</option>
+              <option value="badge">Group by badge</option>
+            </select>
 
             {/* View toggle */}
             <div
@@ -229,7 +243,7 @@ export default function MembersPage() {
                 {search || roleFilter !== "all" ? "No members match your search." : "No members yet."}
               </p>
             </div>
-          ) : groupByRole ? (
+          ) : groupMode === "role" ? (
             <div className="space-y-8">
               {GROUP_ROLE_ORDER.map(role => {
                 const group = filtered.filter(m => m.role === role);
@@ -240,31 +254,42 @@ export default function MembersPage() {
                       style={{ color: "var(--color-cyan)", textShadow: "0 0 8px rgba(0,255,234,0.4)" }}>
                       {ROLE_DISPLAY[role]} · {group.length}
                     </h2>
-                    {viewMode === "grid" ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {group.map(m => <MemberCard key={m.id} member={m} onClick={() => setSelected(m)} />)}
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {group.map(m => <MemberListRow key={m.id} member={m} onClick={() => setSelected(m)} />)}
-                      </div>
-                    )}
+                    <MemberGrid members={group} viewMode={viewMode} onSelect={setSelected} />
                   </div>
                 );
               })}
             </div>
-          ) : viewMode === "grid" ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filtered.map(m => (
-                <MemberCard key={m.id} member={m} onClick={() => setSelected(m)} />
-              ))}
+          ) : groupMode === "badge" ? (
+            <div className="space-y-8">
+              {PRESET_BADGES.map(badge => {
+                const group = filtered.filter(m => m.badges.some(b => b.badge_slug === badge.slug));
+                if (!group.length) return null;
+                return (
+                  <div key={badge.slug}>
+                    <h2 className="text-xs font-bold uppercase tracking-widest mb-4"
+                      style={{ color: "var(--color-cyan)", textShadow: "0 0 8px rgba(0,255,234,0.4)" }}>
+                      {badge.label} · {group.length}
+                    </h2>
+                    <MemberGrid members={group} viewMode={viewMode} onSelect={setSelected} />
+                  </div>
+                );
+              })}
+              {(() => {
+                const noBadge = filtered.filter(m => m.badges.length === 0);
+                if (!noBadge.length) return null;
+                return (
+                  <div>
+                    <h2 className="text-xs font-bold uppercase tracking-widest mb-4"
+                      style={{ color: "var(--color-cyan)", textShadow: "0 0 8px rgba(0,255,234,0.4)" }}>
+                      No badges · {noBadge.length}
+                    </h2>
+                    <MemberGrid members={noBadge} viewMode={viewMode} onSelect={setSelected} />
+                  </div>
+                );
+              })()}
             </div>
           ) : (
-            <div className="space-y-2">
-              {filtered.map(m => (
-                <MemberListRow key={m.id} member={m} onClick={() => setSelected(m)} />
-              ))}
-            </div>
+            <MemberGrid members={filtered} viewMode={viewMode} onSelect={setSelected} />
           )}
         </div>
       </div>
@@ -278,6 +303,21 @@ export default function MembersPage() {
         />
       )}
     </>
+  );
+}
+
+function MemberGrid({ members, viewMode, onSelect }: { members: MemberRow[]; viewMode: ViewMode; onSelect: (m: MemberRow) => void }) {
+  if (viewMode === "grid") {
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {members.map(m => <MemberCard key={m.id} member={m} onClick={() => onSelect(m)} />)}
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      {members.map(m => <MemberListRow key={m.id} member={m} onClick={() => onSelect(m)} />)}
+    </div>
   );
 }
 

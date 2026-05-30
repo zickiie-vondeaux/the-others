@@ -23,6 +23,7 @@ export interface MemberRow {
   platforms: string[];
   steam_id: string | null;
   privacy_settings: PrivacySettings | null;
+  badges: { badge_slug: string; badge_label: string }[];
 }
 
 const ROLE_GRADIENT: Record<Role, string> = {

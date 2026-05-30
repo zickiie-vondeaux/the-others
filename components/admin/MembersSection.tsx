@@ -19,16 +19,7 @@ interface AdminMember {
   badges: { badge_slug: string; badge_label: string }[];
 }
 
-const PRESET_BADGES = [
-  { slug: "og",        label: "OG Member"     },
-  { slug: "hype",      label: "Hype Beast"    },
-  { slug: "cinephile", label: "Cinephile"     },
-  { slug: "gamer",     label: "Hardcore Gamer"},
-  { slug: "host",      label: "Event Host"    },
-  { slug: "helper",    label: "Helper"        },
-  { slug: "creative",  label: "Creative"      },
-  { slug: "lurker",    label: "Certified Lurker" },
-];
+import { PRESET_BADGES } from "@/lib/badges";
 
 const ROLE_OPTIONS: Role[] = ["unnamed", "wanderer", "ascended", "watcher", "chaos"];
 
