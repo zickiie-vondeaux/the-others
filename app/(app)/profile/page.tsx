@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { TopBar } from "@/components/layout/TopBar";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { PLATFORMS } from "@/lib/supabase/types";
-import { Pencil, Gamepad2, Film, Utensils, Music, MapPin, Calendar, EyeOff, Shield, Copy, Check, Link2 } from "lucide-react";
+import { Pencil, Gamepad2, Film, Utensils, Music, MapPin, Calendar, EyeOff, Copy, Check, Link2 } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ALL_ACHIEVEMENTS, ACHIEVEMENT_MAP } from "@/lib/achievements";
@@ -45,19 +45,6 @@ export default function ProfilePage() {
           {/* Hero card */}
           <div className="rounded-2xl border p-6 relative"
             style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)" }}>
-            <div className="absolute top-4 right-4 flex items-center gap-2">
-              <Link href="/profile/privacy"
-                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-all hover:border-purple-500/60"
-                style={{ borderColor: "var(--color-border)", color: "var(--color-text-secondary)" }}>
-                <Shield size={12} /> Privacy
-              </Link>
-              <Link href="/profile/edit"
-                className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-all hover:border-purple-500/60"
-                style={{ borderColor: "var(--color-border)", color: "var(--color-text-secondary)" }}>
-                <Pencil size={12} /> Edit
-              </Link>
-            </div>
-
             <div className="flex gap-6">
               {/* Left 30%: Avatar + Identity */}
               <div className="w-[30%] shrink-0 flex flex-col items-center text-center gap-3">
@@ -103,7 +90,7 @@ export default function ProfilePage() {
                 ) : (
                   <span />
                 )}
-                <div className="flex flex-wrap gap-x-5 gap-y-2 pt-4 border-t text-sm font-medium"
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-4 border-t text-sm font-medium"
                   style={{ borderColor: "var(--color-border)", color: "var(--color-text-secondary)" }}>
                   {profile.city && (
                     <span className="flex items-center gap-1.5">
@@ -127,6 +114,11 @@ export default function ProfilePage() {
                     </span>
                   )}
                   {lifePathNumber && <span>Life Path {lifePathNumber}</span>}
+                  <Link href="/profile/edit"
+                    className="ml-auto flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-all hover:border-purple-500/60"
+                    style={{ borderColor: "var(--color-border)", color: "var(--color-text-secondary)" }}>
+                    <Pencil size={12} /> Edit
+                  </Link>
                 </div>
               </div>
             </div>
