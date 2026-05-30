@@ -5,21 +5,32 @@ import { TopBar } from "@/components/layout/TopBar";
 import { createClient } from "@/lib/supabase/client";
 import { MemberCard, MemberListRow, type MemberRow } from "@/components/members/MemberCard";
 import { MemberProfileModal } from "@/components/members/MemberProfileModal";
-import { LayoutGrid, List, Search, X } from "lucide-react";
+import { LayoutGrid, List, Search, X, Layers } from "lucide-react";
 import type { Role } from "@/lib/roles";
 import { ROLE_DISPLAY } from "@/lib/roles";
 
-type ViewMode = "grid" | "list";
-type RoleFilter = "all" | "wanderer" | "ascended" | "watcher";
+type ViewMode   = "grid" | "list";
+type RoleFilter = "all" | "chaos" | "watcher" | "ascended" | "wanderer" | "unnamed";
+type SortBy     = "newest" | "oldest" | "alpha" | "alpha-desc";
 
 const ROLE_FILTER_OPTIONS: { id: RoleFilter; label: string }[] = [
-  { id: "all",      label: "All roles"  },
+  { id: "all",      label: "All roles"           },
+  { id: "chaos",    label: ROLE_DISPLAY.chaos    },
+  { id: "watcher",  label: ROLE_DISPLAY.watcher  },
   { id: "ascended", label: ROLE_DISPLAY.ascended },
   { id: "wanderer", label: ROLE_DISPLAY.wanderer },
-  { id: "watcher",  label: ROLE_DISPLAY.watcher  },
+  { id: "unnamed",  label: ROLE_DISPLAY.unnamed  },
 ];
 
-const MEMBER_ROLES: Role[] = ["wanderer", "ascended", "watcher", "chaos"];
+const SORT_OPTIONS: { id: SortBy; label: string }[] = [
+  { id: "newest",     label: "Newest first"  },
+  { id: "oldest",     label: "Oldest first"  },
+  { id: "alpha",      label: "A → Z"         },
+  { id: "alpha-desc", label: "Z → A"         },
+];
+
+const MEMBER_ROLES: Role[] = ["chaos", "watcher", "ascended", "wanderer", "unnamed"];
+const GROUP_ROLE_ORDER: Role[] = ["chaos", "watcher", "ascended", "wanderer", "unnamed"];
 
 export default function MembersPage() {
   const [myId, setMyId]     = useState("");
@@ -30,6 +41,8 @@ export default function MembersPage() {
   const [viewMode, setViewMode]       = useState<ViewMode>("grid");
   const [search, setSearch]           = useState("");
   const [roleFilter, setRoleFilter]   = useState<RoleFilter>("all");
+  const [sortBy, setSortBy]           = useState<SortBy>("newest");
+  const [groupByRole, setGroupByRole] = useState(false);
   const [selected, setSelected]       = useState<MemberRow | null>(null);
 
   useEffect(() => {
@@ -63,7 +76,7 @@ export default function MembersPage() {
   }, []);
 
   const filtered = useMemo(() => {
-    return members.filter(m => {
+    const list = members.filter(m => {
       if (roleFilter !== "all" && m.role !== roleFilter) return false;
       if (search.trim()) {
         const q = search.trim().toLowerCase();
@@ -71,7 +84,13 @@ export default function MembersPage() {
       }
       return true;
     });
-  }, [members, search, roleFilter]);
+    return list.sort((a, b) => {
+      if (sortBy === "oldest") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (sortBy === "alpha")  return a.display_name.localeCompare(b.display_name);
+      if (sortBy === "alpha-desc") return b.display_name.localeCompare(a.display_name);
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime(); // newest
+    });
+  }, [members, search, roleFilter, sortBy]);
 
   // ── Unnamed: access denied ─────────────────────────────────────
   if (!loading && myRole === "unnamed") {
@@ -134,7 +153,7 @@ export default function MembersPage() {
             {/* Role filter */}
             <select
               value={roleFilter}
-              onChange={e => setRoleFilter(e.target.value as RoleFilter)}
+              onChange={e => { setRoleFilter(e.target.value as RoleFilter); setGroupByRole(false); }}
               className="px-3 py-1.5 rounded-lg border text-sm outline-none"
               style={{
                 backgroundColor: "var(--color-surface)",
@@ -146,6 +165,35 @@ export default function MembersPage() {
                 <option key={o.id} value={o.id}>{o.label}</option>
               ))}
             </select>
+
+            {/* Sort */}
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value as SortBy)}
+              className="px-3 py-1.5 rounded-lg border text-sm outline-none"
+              style={{
+                backgroundColor: "var(--color-surface)",
+                borderColor: "var(--color-border)",
+                color: sortBy !== "newest" ? "var(--color-purple-light)" : "var(--color-text-secondary)",
+              }}
+            >
+              {SORT_OPTIONS.map(o => (
+                <option key={o.id} value={o.id}>{o.label}</option>
+              ))}
+            </select>
+
+            {/* Group by role toggle */}
+            <button
+              onClick={() => { setGroupByRole(g => !g); if (!groupByRole) setRoleFilter("all"); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-all"
+              style={{
+                backgroundColor: groupByRole ? "color-mix(in srgb, var(--color-purple) 15%, transparent)" : "var(--color-surface)",
+                borderColor: groupByRole ? "var(--color-purple)" : "var(--color-border)",
+                color: groupByRole ? "var(--color-purple-light)" : "var(--color-text-secondary)",
+              }}
+            >
+              <Layers size={13} /> Group
+            </button>
 
             {/* View toggle */}
             <div
@@ -180,6 +228,30 @@ export default function MembersPage() {
               <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
                 {search || roleFilter !== "all" ? "No members match your search." : "No members yet."}
               </p>
+            </div>
+          ) : groupByRole ? (
+            <div className="space-y-8">
+              {GROUP_ROLE_ORDER.map(role => {
+                const group = filtered.filter(m => m.role === role);
+                if (!group.length) return null;
+                return (
+                  <div key={role}>
+                    <h2 className="text-xs font-bold uppercase tracking-widest mb-4"
+                      style={{ color: "var(--color-cyan)", textShadow: "0 0 8px rgba(0,255,234,0.4)" }}>
+                      {ROLE_DISPLAY[role]} · {group.length}
+                    </h2>
+                    {viewMode === "grid" ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {group.map(m => <MemberCard key={m.id} member={m} onClick={() => setSelected(m)} />)}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {group.map(m => <MemberListRow key={m.id} member={m} onClick={() => setSelected(m)} />)}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : viewMode === "grid" ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
