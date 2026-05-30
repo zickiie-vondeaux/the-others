@@ -72,17 +72,29 @@ export function PersonalityCard({ result, slug, onTake, compact }: Props) {
           className={compact ? "w-7 h-7" : "w-10 h-10"}
           style={{ filter: "drop-shadow(0 0 6px rgba(139,92,246,0.55))" }}
         />
+      ) : slug === "mbti" ? (
+        <img
+          src={`/MBTI%20icons/${result.result_code}.svg`}
+          alt={result.result_code}
+          className={compact ? "w-9 h-9" : "w-[72px] h-[72px]"}
+          style={{ filter: "drop-shadow(0 0 6px rgba(139,92,246,0.45))" }}
+        />
       ) : (
         <span className="text-xl">{meta.icon}</span>
       )}
-      <div
-        className="text-lg font-black tracking-tight"
-        style={{ color: "var(--color-purple)" }}
-      >
-        {result.result_code}
-      </div>
+      {slug !== "mbti" && (
+        <div
+          className="text-lg font-black tracking-tight"
+          style={{ color: "var(--color-purple)" }}
+        >
+          {result.result_code}
+        </div>
+      )}
       {result.result_label && (
-        <div className="text-xs font-medium leading-tight" style={{ color: "var(--color-text-secondary)" }}>
+        <div
+          className="text-xs font-medium leading-tight"
+          style={{ color: slug === "mbti" ? "var(--color-purple)" : "var(--color-text-secondary)" }}
+        >
           {result.result_label}
         </div>
       )}
@@ -131,7 +143,9 @@ export function MemberPersonalityChips({ displayName, avatarUrl, results, slugs 
             <span key={slug} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: "rgba(139,92,246,0.12)", color: "var(--color-purple)", border: "1px solid rgba(139,92,246,0.2)" }}>
               {slug === "zodiac"
                 ? <img src={`/${r.result_code}.svg`} alt={r.result_code} className="w-3.5 h-3.5" style={{ filter: "drop-shadow(0 0 3px rgba(139,92,246,0.7))" }} />
-                : meta.icon} {r.result_code}
+                : slug === "mbti"
+                  ? <img src={`/MBTI%20icons/${r.result_code}.svg`} alt={r.result_code} className="w-3.5 h-3.5" style={{ filter: "drop-shadow(0 0 3px rgba(139,92,246,0.6))" }} />
+                  : meta.icon} {r.result_code}
             </span>
           );
         })}

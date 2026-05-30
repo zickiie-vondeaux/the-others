@@ -193,11 +193,22 @@ export default function ProfilePage() {
                           className="w-5 h-5"
                           style={{ filter: "drop-shadow(0 0 4px rgba(139,92,246,0.7))" }}
                         />
+                      ) : q.slug === "mbti" ? (
+                        <img
+                          src={`/MBTI%20icons/${r.result_code}.svg`}
+                          alt={r.result_code}
+                          className="w-8 h-8"
+                          style={{ filter: "drop-shadow(0 0 4px rgba(139,92,246,0.6))" }}
+                        />
                       ) : (
                         <span className="text-base">{q.icon}</span>
                       )}
                       <div>
-                        <p className="text-xs font-bold" style={{ color: "var(--color-purple)" }}>{r.result_code}</p>
+                        {q.slug === "mbti" ? (
+                          <p className="text-xs font-bold" style={{ color: "var(--color-purple)" }}>{r.result_label ?? r.result_code}</p>
+                        ) : (
+                          <p className="text-xs font-bold" style={{ color: "var(--color-purple)" }}>{r.result_code}</p>
+                        )}
                         <p className="text-[10px]" style={{ color: "var(--color-text-muted)" }}>{q.shortName}</p>
                       </div>
                     </div>
