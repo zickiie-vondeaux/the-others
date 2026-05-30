@@ -2,6 +2,7 @@
 
 import type { PersonalityResult } from "@/lib/supabase/types";
 import { ALL_QUIZZES, AUTO_CALC_META, type AutoCalcSlug } from "@/lib/personality";
+import { zodiacSrc, mbtiSrc, enneagramSrc } from "@/lib/personality/icons";
 import { RotateCcw } from "lucide-react";
 
 interface Props {
@@ -47,6 +48,8 @@ export function PersonalityCard({ result, slug, onTake, compact }: Props) {
     );
   }
 
+  const ennSrc = slug === "enneagram" ? enneagramSrc(result.result_code) : null;
+
   return (
     <button
       onClick={onTake}
@@ -67,22 +70,29 @@ export function PersonalityCard({ result, slug, onTake, compact }: Props) {
     >
       {slug === "zodiac" ? (
         <img
-          src={`/${result.result_code}.svg`}
+          src={zodiacSrc(result.result_code)}
           alt={result.result_code}
           className={compact ? "w-7 h-7" : "w-10 h-10"}
           style={{ filter: "drop-shadow(0 0 6px rgba(139,92,246,0.55))" }}
         />
       ) : slug === "mbti" ? (
         <img
-          src={`/MBTI%20icons/${result.result_code}.svg`}
+          src={mbtiSrc(result.result_code)}
           alt={result.result_code}
           className={compact ? "w-9 h-9" : "w-[72px] h-[72px]"}
+          style={{ filter: "drop-shadow(0 0 6px rgba(139,92,246,0.45))" }}
+        />
+      ) : ennSrc ? (
+        <img
+          src={ennSrc}
+          alt={result.result_code}
+          className={compact ? "w-9 h-9" : "w-14 h-14"}
           style={{ filter: "drop-shadow(0 0 6px rgba(139,92,246,0.45))" }}
         />
       ) : (
         <span className="text-xl">{meta.icon}</span>
       )}
-      {slug !== "mbti" && (
+      {slug !== "mbti" && slug !== "enneagram" && (
         <div
           className="text-lg font-black tracking-tight"
           style={{ color: "var(--color-purple)" }}
@@ -93,7 +103,7 @@ export function PersonalityCard({ result, slug, onTake, compact }: Props) {
       {result.result_label && (
         <div
           className="text-xs font-medium leading-tight"
-          style={{ color: slug === "mbti" ? "var(--color-purple)" : "var(--color-text-secondary)" }}
+          style={{ color: (slug === "mbti" || slug === "enneagram") ? "var(--color-purple)" : "var(--color-text-secondary)" }}
         >
           {result.result_label}
         </div>
@@ -139,13 +149,16 @@ export function MemberPersonalityChips({ displayName, avatarUrl, results, slugs 
                 : meta.icon} —
             </span>
           );
+          const ennSrc = slug === "enneagram" ? enneagramSrc(r.result_code) : null;
           return (
             <span key={slug} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: "rgba(139,92,246,0.12)", color: "var(--color-purple)", border: "1px solid rgba(139,92,246,0.2)" }}>
               {slug === "zodiac"
-                ? <img src={`/${r.result_code}.svg`} alt={r.result_code} className="w-3.5 h-3.5" style={{ filter: "drop-shadow(0 0 3px rgba(139,92,246,0.7))" }} />
+                ? <img src={zodiacSrc(r.result_code)} alt={r.result_code} className="w-3.5 h-3.5" style={{ filter: "drop-shadow(0 0 3px rgba(139,92,246,0.7))" }} />
                 : slug === "mbti"
-                  ? <img src={`/MBTI%20icons/${r.result_code}.svg`} alt={r.result_code} className="w-3.5 h-3.5" style={{ filter: "drop-shadow(0 0 3px rgba(139,92,246,0.6))" }} />
-                  : meta.icon} {r.result_code}
+                  ? <img src={mbtiSrc(r.result_code)} alt={r.result_code} className="w-3.5 h-3.5" style={{ filter: "drop-shadow(0 0 3px rgba(139,92,246,0.6))" }} />
+                  : ennSrc
+                    ? <img src={ennSrc} alt={r.result_code} className="w-3.5 h-3.5" style={{ filter: "drop-shadow(0 0 3px rgba(139,92,246,0.6))" }} />
+                    : meta.icon} {r.result_code}
             </span>
           );
         })}

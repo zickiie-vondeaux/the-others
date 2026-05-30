@@ -10,6 +10,7 @@ import type { Role } from "@/lib/roles";
 import { ROLE_TIER } from "@/lib/roles";
 import type { PersonalityResult, PrivacySettings } from "@/lib/supabase/types";
 import { ALL_QUIZZES, AUTO_CALC_META } from "@/lib/personality";
+import { zodiacSrc, mbtiSrc, enneagramSrc } from "@/lib/personality/icons";
 import { ACTIVITY_ICONS, ACTIVITY_LABELS, type ActivityEntry } from "@/lib/activity";
 
 const MEMBER_ACTIVITY_TYPES = [
@@ -185,12 +186,15 @@ export function MemberProfileModal({ member, myId, myRole, onClose }: Props) {
                       style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}
                     >
                       {q.slug === "zodiac"
-                        ? <img src={`/${r.result_code}.svg`} alt={r.result_code} className="w-4 h-4"
+                        ? <img src={zodiacSrc(r.result_code)} alt={r.result_code} className="w-4 h-4"
                             style={{ filter: "drop-shadow(0 0 4px rgba(139,92,246,0.7))" }} />
                         : q.slug === "mbti"
-                          ? <img src={`/MBTI%20icons/${r.result_code}.svg`} alt={r.result_code} className="w-4 h-4"
+                          ? <img src={mbtiSrc(r.result_code)} alt={r.result_code} className="w-4 h-4"
                               style={{ filter: "drop-shadow(0 0 4px rgba(139,92,246,0.6))" }} />
-                          : <span className="text-sm">{(q as { icon?: string }).icon}</span>
+                          : q.slug === "enneagram" && enneagramSrc(r.result_code)
+                            ? <img src={enneagramSrc(r.result_code)!} alt={r.result_code} className="w-4 h-4"
+                                style={{ filter: "drop-shadow(0 0 4px rgba(139,92,246,0.6))" }} />
+                            : <span className="text-sm">{(q as { icon?: string }).icon}</span>
                       }
                       <div>
                         <p className="text-xs font-bold leading-none" style={{ color: "var(--color-purple)" }}>{r.result_code}</p>

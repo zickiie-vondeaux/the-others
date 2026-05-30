@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ALL_ACHIEVEMENTS, ACHIEVEMENT_MAP } from "@/lib/achievements";
 import { AchievementGrid } from "@/components/achievements/AchievementBadge";
 import { ALL_QUIZZES, AUTO_CALC_META, type AutoCalcSlug } from "@/lib/personality";
+import { zodiacSrc, mbtiSrc, enneagramSrc } from "@/lib/personality/icons";
 import type { PersonalityResult } from "@/lib/supabase/types";
 
 export default function ProfilePage() {
@@ -117,7 +118,7 @@ export default function ProfilePage() {
                   {zodiac && (
                     <span className="flex items-center gap-1.5">
                       <img
-                        src={`/${zodiac.sign}.svg`}
+                        src={zodiacSrc(zodiac.sign)}
                         alt={zodiac.sign}
                         className="w-5 h-5"
                         style={{ filter: "drop-shadow(0 0 4px rgba(139,92,246,0.7))" }}
@@ -188,14 +189,21 @@ export default function ProfilePage() {
                     >
                       {q.slug === "zodiac" ? (
                         <img
-                          src={`/${r.result_code}.svg`}
+                          src={zodiacSrc(r.result_code)}
                           alt={r.result_code}
                           className="w-5 h-5"
                           style={{ filter: "drop-shadow(0 0 4px rgba(139,92,246,0.7))" }}
                         />
                       ) : q.slug === "mbti" ? (
                         <img
-                          src={`/MBTI%20icons/${r.result_code}.svg`}
+                          src={mbtiSrc(r.result_code)}
+                          alt={r.result_code}
+                          className="w-8 h-8"
+                          style={{ filter: "drop-shadow(0 0 4px rgba(139,92,246,0.6))" }}
+                        />
+                      ) : q.slug === "enneagram" && enneagramSrc(r.result_code) ? (
+                        <img
+                          src={enneagramSrc(r.result_code)!}
                           alt={r.result_code}
                           className="w-8 h-8"
                           style={{ filter: "drop-shadow(0 0 4px rgba(139,92,246,0.6))" }}
@@ -204,7 +212,7 @@ export default function ProfilePage() {
                         <span className="text-base">{q.icon}</span>
                       )}
                       <div>
-                        {q.slug === "mbti" ? (
+                        {(q.slug === "mbti" || q.slug === "enneagram") ? (
                           <p className="text-xs font-bold" style={{ color: "var(--color-purple)" }}>{r.result_label ?? r.result_code}</p>
                         ) : (
                           <p className="text-xs font-bold" style={{ color: "var(--color-purple)" }}>{r.result_code}</p>

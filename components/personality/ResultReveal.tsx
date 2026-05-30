@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { RotateCcw, Check, Share2 } from "lucide-react";
 import type { Quiz, QuizResult } from "@/lib/personality/types";
 import type { AutoCalcResult } from "@/lib/personality/auto-calc";
+import { zodiacSrc, mbtiSrc, enneagramSrc } from "@/lib/personality/icons";
 
 type AnyResult = QuizResult | AutoCalcResult;
 
@@ -65,10 +66,24 @@ export function ResultReveal({ quiz, result, isSaved, onRetake, onClose }: Props
           >
             {quiz?.slug === "zodiac" ? (
               <img
-                src={`/${result.code}.svg`}
+                src={zodiacSrc(result.code)}
                 alt={result.code}
                 className="w-24 h-24"
                 style={{ filter: "drop-shadow(0 0 16px rgba(139,92,246,0.7))" }}
+              />
+            ) : quiz?.slug === "mbti" ? (
+              <img
+                src={mbtiSrc(result.code)}
+                alt={result.code}
+                className="w-24 h-24"
+                style={{ filter: "drop-shadow(0 0 16px rgba(139,92,246,0.6))" }}
+              />
+            ) : quiz?.slug === "enneagram" && enneagramSrc(result.code) ? (
+              <img
+                src={enneagramSrc(result.code)!}
+                alt={result.code}
+                className="w-24 h-24"
+                style={{ filter: "drop-shadow(0 0 16px rgba(139,92,246,0.6))" }}
               />
             ) : (
               <div
@@ -78,7 +93,7 @@ export function ResultReveal({ quiz, result, isSaved, onRetake, onClose }: Props
                 {symbol ?? result.code}
               </div>
             )}
-            {symbol && quiz?.slug !== "zodiac" && (
+            {symbol && quiz?.slug !== "zodiac" && quiz?.slug !== "mbti" && quiz?.slug !== "enneagram" && (
               <div className="text-base font-bold" style={{ color: "var(--color-text-muted)" }}>
                 {result.code}
               </div>
