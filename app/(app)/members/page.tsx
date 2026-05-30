@@ -32,7 +32,7 @@ const SORT_OPTIONS: { id: SortBy; label: string }[] = [
 ];
 
 const MEMBER_ROLES: Role[] = ["chaos", "watcher", "ascended", "wanderer", "unnamed"];
-const GROUP_ROLE_ORDER: Role[] = ["chaos", "watcher", "ascended", "wanderer", "unnamed"];
+const GROUP_ROLE_ORDER: Role[] = ["watcher", "ascended", "wanderer", "unnamed"];
 
 export default function MembersPage() {
   const [myId, setMyId]     = useState("");
