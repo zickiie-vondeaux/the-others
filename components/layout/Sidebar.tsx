@@ -14,6 +14,7 @@ import {
   Bell,
   Settings,
   Shield,
+  LogOut,
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
@@ -227,6 +228,25 @@ export function Sidebar() {
           <Shield size={17} />
           <span>Admin Panel</span>
         </Link>
+
+        <div className="mx-0 mt-1" style={{ borderTop: "1px solid rgba(0, 255, 234, 0.08)" }} />
+
+        <a
+          href="/api/auth/signout"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 mt-1"
+          style={{ color: "var(--color-text-muted)" }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(236, 72, 153, 0.06)";
+            (e.currentTarget as HTMLElement).style.color = "rgba(236, 72, 153, 0.7)";
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.backgroundColor = "";
+            (e.currentTarget as HTMLElement).style.color = "var(--color-text-muted)";
+          }}
+        >
+          <LogOut size={17} />
+          <span>Sign Out</span>
+        </a>
       </nav>
     </aside>
     </div>

@@ -3,15 +3,16 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-type Step = "invite" | "auth";
+type Step = "choose" | "invite" | "auth";
 
 export default function LoginPage() {
-  const [step, setStep]           = useState<Step>("invite");
+  const [step, setStep]           = useState<Step>("choose");
   const [code, setCode]           = useState("");
   const [codeId, setCodeId]       = useState<string | null>(null);
   const [codeError, setCodeError] = useState("");
   const [checking, setChecking]   = useState(false);
   const [loading, setLoading]     = useState<"google" | "discord" | null>(null);
+  const [isReturning, setIsReturning] = useState(false);
 
   async function handleCodeSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,7 +56,28 @@ export default function LoginPage() {
         Apparently we&apos;re just acquaintances. Their loss.
       </p>
 
-      {step === "invite" ? (
+      {step === "choose" && (
+        <div className="space-y-3">
+          <button
+            onClick={() => { setIsReturning(true); setStep("auth"); }}
+            className="neon-btn-primary w-full py-3 text-sm"
+          >
+            I have an account
+          </button>
+          <button
+            onClick={() => { setIsReturning(false); setStep("invite"); }}
+            className="neon-btn-outline w-full py-3 text-sm"
+          >
+            I have an invite code
+          </button>
+          <p className="text-xs mt-4" style={{ color: "#00ffea66" }}>
+            No invite? You&apos;re probably still an acquaintance.{" "}
+            <span style={{ color: "#ec4899" }}>Ask Zickiie.</span>
+          </p>
+        </div>
+      )}
+
+      {step === "invite" && (
         <form onSubmit={handleCodeSubmit} className="space-y-3">
           <div className="text-left">
             <label className="text-xs font-medium mb-1.5 block" style={{ color: "#00ffea88" }}>
@@ -89,16 +111,24 @@ export default function LoginPage() {
               "Verify Code"
             )}
           </button>
-          <p className="text-xs mt-4" style={{ color: "#00ffea66" }}>
-            No invite? You&apos;re probably still an acquaintance.{" "}
-            <span style={{ color: "#ec4899" }}>Ask Zickiie.</span>
-          </p>
+          <button
+            type="button"
+            onClick={() => setStep("choose")}
+            className="text-xs underline mt-2"
+            style={{ color: "#00ffea66" }}
+          >
+            ← Back
+          </button>
         </form>
-      ) : (
+      )}
+
+      {step === "auth" && (
         <div className="space-y-3">
-          <p className="text-xs mb-4" style={{ color: "#1D9E75" }}>
-            ✓ Invite code accepted. Choose how to sign in.
-          </p>
+          {!isReturning && (
+            <p className="text-xs mb-4" style={{ color: "#1D9E75" }}>
+              ✓ Invite code accepted. Choose how to sign in.
+            </p>
+          )}
           <button
             onClick={() => signInWith("google")}
             disabled={loading !== null}
@@ -124,11 +154,12 @@ export default function LoginPage() {
             Continue with Discord
           </button>
           <button
-            onClick={() => { setStep("invite"); setCode(""); setCodeId(null); }}
+            type="button"
+            onClick={() => setStep("choose")}
             className="text-xs underline mt-2"
             style={{ color: "#00ffea66" }}
           >
-            Use a different code
+            ← Back
           </button>
         </div>
       )}
